@@ -65,18 +65,44 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<'alert' | 'search'>('alert');
   const [placeType, setPlaceType] = useState('すべて');
   const [equipment, setEquipment] = useState('すべて');
-  const [filterCity, setFilterCity] = useState('さいたま市');
+  const [filterCity, setFilterCity] = useState('すべて');
   const [filterNeed, setFilterNeed] = useState('すべて');
   const [searchKeyword, setSearchKeyword] = useState('');
 
 
-  const regionStats = regionData.map(region => ({
+  const regionStatsRaw = regionData.map(region => ({
     ...region,
     need: calculateNeed(region.children, region.facilities)
-  })).sort((a, b) => {
-    const order: Record<string, number> = { '高': 3, '中': 2, '低': 1 };
-    return order[b.need] - order[a.need];
-  }).filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
+  }));
+
+  // 「ニーズ高」かつ人口多い、かつ近隣に子ども食堂がない地域を抽出
+  const HIGH_NEED_POP_THRESHOLD = 10000; // 人口多い基準
+  const NO_FACILITY_RADIUS_KM = 2.0; // 2km以内に施設がなければ「周りにない」
+  // regionごとに近隣施設があるか判定
+  function hasNearbyFacility(region: any, locations: any[], radiusKm: number) {
+    return locations.some(loc => {
+      const R = 6371; // 地球半径km
+      const dLat = (loc.lat - region.lat) * Math.PI / 180;
+      const dLng = (loc.lng - region.lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(region.lat * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dist = R * c;
+      return dist < radiusKm;
+    });
+  }
+
+  const highNeedSpecialRegions = regionStatsRaw.filter(region =>
+    region.need === '高' &&
+    region.children >= HIGH_NEED_POP_THRESHOLD &&
+    !hasNearbyFacility(region, locations, NO_FACILITY_RADIUS_KM)
+  );
+
+  const regionStats = regionStatsRaw
+    .sort((a, b) => {
+      const order: Record<string, number> = { '高': 3, '中': 2, '低': 1 };
+      return order[b.need] - order[a.need];
+    })
+    .filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
 
   const filteredLocations = locations.filter(loc => {
     const typeMatch = placeType === 'すべて' || loc.name.includes(placeType) || loc.needs.some((need: string) => need.includes(placeType));
@@ -122,8 +148,29 @@ const App = () => {
     });
   }, []);
 
+  // SSR/ビルド時 window未定義対策: isMobileをuseState+useEffectで判定
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 600);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  const mainLayoutStyle: React.CSSProperties = isMobile
+    ? { flex: 1, display: 'flex', flexDirection: 'column', gap: 0, padding: 0, height: 'auto', overflow: 'visible' }
+    : { flex: 1, display: 'flex', gap: '16px', padding: '16px', height: 'calc(100vh - 80px)', overflow: 'hidden' };
+  const sidebarStyle: React.CSSProperties = isMobile
+    ? { width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', height: 'auto', overflow: 'visible', marginBottom: '12px' }
+    : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflow: 'hidden' };
+  const cardListStyle: React.CSSProperties = isMobile
+    ? { height: '320px', overflow: 'auto' }
+    : { height: '800px', overflow: 'scroll' };
+  const searchListStyle: React.CSSProperties = isMobile
+    ? { height: '220px', overflow: 'auto' }
+    : { height: '800px', overflow: 'scroll' };
+
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'auto', background: '#f4f6fb' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'auto', background: '#f4f6fb' }}>
       {/* ヘッダー */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#1976d2', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
@@ -136,8 +183,8 @@ const App = () => {
         </div>
       </header>
 
-      <div style={{ flex: 1, display: 'flex', gap: '16px', padding: '16px', height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
-        <section style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflow: 'hidden' }}>
+      <div style={mainLayoutStyle}>
+        <section style={sidebarStyle}>
           <div style={{ background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
               <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>ニーズアラート</button>
@@ -165,7 +212,22 @@ const App = () => {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>高ニーズ地域を一覧表示</div>
-                <div style={{ height: '800px', overflow: 'scroll' }}>
+                <div style={cardListStyle}>
+                  {/* 特別警告エリア */}
+                  {highNeedSpecialRegions.length > 0 && (
+                    <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
+                      <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に支援が必要な地域</div>
+                      {highNeedSpecialRegions.map(region => (
+                        <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #e3eaf7', cursor: 'pointer', fontWeight: 700 }}>
+                          {region.name}
+                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>ニーズ 高</span>
+                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[子ども食堂が近隣にありません]</span>
+                          <div style={{ fontSize: '0.8rem', color: '#b94a48', marginTop: '2px' }}>人口: {region.children.toLocaleString()}人</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* 通常リスト */}
                   {regionStats.map(region => {
                     const message = region.need === '高' ? '区内で最も子どもの数が多い地域' : region.need === '中' ? '中程度のニーズがある地域' : '比較的安定した地域';
                     // ニーズ色分け
@@ -212,7 +274,7 @@ const App = () => {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>検索結果 ({filteredLocations.length}件)</div>
-                <div style={{ height: '800px', overflow: 'scroll' }}>
+                <div style={searchListStyle}>
                   {filteredLocations.map(loc => (
                     <div key={loc.id} onClick={() => {
                       if (Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
