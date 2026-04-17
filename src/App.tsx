@@ -159,6 +159,11 @@ const App = () => {
   const mainLayoutStyle: React.CSSProperties = isMobile
     ? { flex: 1, display: 'flex', flexDirection: 'column', gap: 0, padding: 0, height: 'auto', overflow: 'visible' }
     : { flex: 1, display: 'flex', gap: '16px', padding: '16px', height: 'calc(100vh - 80px)', overflow: 'hidden' };
+
+  // モバイル時のmainの高さを明示的に指定
+  const mainStyle: React.CSSProperties = isMobile
+    ? { flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '400px' }
+    : { flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' };
   const sidebarStyle: React.CSSProperties = isMobile
     ? { width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', height: 'auto', overflow: 'visible', marginBottom: '12px' }
     : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflow: 'hidden' };
@@ -293,7 +298,7 @@ const App = () => {
 
         </section>
 
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <main style={mainStyle}>
           <div style={{ flex: 1, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}>
             <MapContainer center={mapConfig.center} zoom={mapConfig.zoom} style={{ height: '100%', width: '100%' }}>
               <ChangeView center={mapConfig.center} zoom={mapConfig.zoom} />
