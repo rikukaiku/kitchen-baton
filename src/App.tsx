@@ -267,6 +267,8 @@ const App = () => {
                     <option>子ども食堂</option>
                     <option>フードパントリー</option>
                     <option>空き家活用</option>
+                    <option>社員食堂</option>
+                    <option>公民館</option>
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
