@@ -19,7 +19,7 @@ function ChangeView({ center, zoom }: { center: [number, number], zoom: number }
   const map = useMap();
   useEffect(() => {
     map.setView(center, zoom);
-  }, [center, zoom, map]);
+  }, [center[0], center[1], zoom, map]);
   return null;
 }
 
