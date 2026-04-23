@@ -18,8 +18,17 @@ L.Marker.prototype.options.icon = DefaultIcon;
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
+    map.setView(center, zoom, { animate: false });
   }, [center[0], center[1], zoom, map]);
+  return null;
+}
+
+// 地図サイズ再計算用コンポーネント
+function MapResizeFixer() {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+  }, [map]);
   return null;
 }
 
@@ -304,6 +313,7 @@ const App = () => {
           <div style={isMobile ? { height: '400px', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' } : { flex: 1, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}>
             <MapContainer center={mapConfig.center} zoom={mapConfig.zoom} style={isMobile ? { height: '400px', width: '100%' } : { height: '100%', width: '100%' }}>
               <ChangeView center={mapConfig.center} zoom={mapConfig.zoom} />
+              <MapResizeFixer />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               {showNeeds && regionStats.map(region => (
                 <Circle 
