@@ -231,7 +231,7 @@ const App = () => {
     : { height: '800px', overflow: 'scroll' };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'auto', background: '#f4f6fb' }}>
+    <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: isMobile ? 'auto' : 'hidden', background: '#f4f6fb' }}>
       {/* ヘッダー */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#1976d2', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
