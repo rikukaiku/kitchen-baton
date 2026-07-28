@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 // import { useMemo } from 'react';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import L from 'leaflet';
 import Papa from 'papaparse';
 
@@ -80,7 +83,7 @@ const App = () => {
   const [mapConfig, setMapConfig] = useState<{center: [number, number], zoom: number}>({ center: [35.765, 139.645], zoom: 11 });
   const [showNeeds, setShowNeeds] = useState(true);
   const [activeTab, setActiveTab] = useState<'alert' | 'search'>('search');
-  const [placeType, setPlaceType] = useState('すべて');
+  const [placeTypes, setPlaceTypes] = useState<string[]>([]);
   const [equipment, setEquipment] = useState('すべて');
   const [filterCity, setFilterCity] = useState('すべて');
   const [filterNeed, setFilterNeed] = useState('すべて');
@@ -133,7 +136,7 @@ const App = () => {
     .filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
 
   const filteredLocations = locations.filter(loc => {
-    const typeMatch = placeType === 'すべて' || loc.type === placeType || loc.name.includes(placeType) || loc.needs.some((need: string) => need.includes(placeType));
+    const typeMatch = placeTypes.length === 0 || placeTypes.some(pt => loc.type === pt || loc.name.includes(pt) || loc.needs.some((need: string) => need.includes(pt)));
     const equipmentMatch = equipment === 'すべて' || loc.needs.some((need: string) => need.includes(equipment));
     const keywordMatch = searchKeyword === '' || loc.needs.some((need: string) => need.toLowerCase().includes(searchKeyword.toLowerCase())) || loc.name.toLowerCase().includes(searchKeyword.toLowerCase()) || loc.address.toLowerCase().includes(searchKeyword.toLowerCase());
     const prefectureMatch = filterPrefecture === 'すべて' || loc.prefecture === filterPrefecture;
@@ -385,15 +388,23 @@ const App = () => {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>場所の種類</label>
-                  <select value={placeType} onChange={(e) => setPlaceType(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
-                    <option>すべて</option>
-                    <option>子ども食堂</option>
-                    <option>フードパントリー</option>
-                    <option>空き家活用</option>
-                    <option>社員食堂</option>
-                    <option>公民館</option>
-                  </select>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>場所の種類（複数選択可）</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {['子ども食堂', 'フードパントリー', '空き家活用', '社員食堂', '公民館'].map(t => {
+                      const checked = placeTypes.includes(t);
+                      return (
+                        <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '999px', border: checked ? '1px solid #1976d2' : '1px solid #ccd6e8', background: checked ? '#e3eaf7' : '#fff', color: checked ? '#1976d2' : '#555', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setPlaceTypes(prev => checked ? prev.filter(x => x !== t) : [...prev, t])}
+                            style={{ margin: 0 }}
+                          />
+                          {t}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>設備</label>
@@ -439,25 +450,27 @@ const App = () => {
                   pathOptions={{ fillColor: region.need === '高' ? '#e74c3c' : '#f39c12', color: 'transparent', fillOpacity: 0.25 }}
                 />
               ))}
-              {locations.map(loc => (
-                <Marker
-                  key={loc.id}
-                  position={[loc.lat, loc.lng]}
-                  icon={loc.type === '公民館' ? KouminIcon : DefaultIcon}
-                  ref={(el) => { markerRefs.current[loc.id] = el; }}
-                >
-                  <Popup>
-                    <strong>{loc.name}</strong><br />
-                    <span style={{ fontSize: '0.8rem' }}>{loc.address}</span><br />
-                    {loc.type && (
-                      <span style={{ fontSize: '0.7rem', background: '#e3f5e6', color: '#2e7d32', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{loc.type}</span>
-                    )}
-                    {loc.needs.map((n: string) => (
-                      <span key={n} style={{ fontSize: '0.7rem', background: '#edf2fb', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{n}</span>
-                    ))}
-                  </Popup>
-                </Marker>
-              ))}
+              <MarkerClusterGroup chunkedLoading disableClusteringAtZoom={16}>
+                {locations.map(loc => (
+                  <Marker
+                    key={loc.id}
+                    position={[loc.lat, loc.lng]}
+                    icon={loc.type === '公民館' ? KouminIcon : DefaultIcon}
+                    ref={(el) => { markerRefs.current[loc.id] = el; }}
+                  >
+                    <Popup>
+                      <strong>{loc.name}</strong><br />
+                      <span style={{ fontSize: '0.8rem' }}>{loc.address}</span><br />
+                      {loc.type && (
+                        <span style={{ fontSize: '0.7rem', background: '#e3f5e6', color: '#2e7d32', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{loc.type}</span>
+                      )}
+                      {loc.needs.map((n: string) => (
+                        <span key={n} style={{ fontSize: '0.7rem', background: '#edf2fb', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{n}</span>
+                      ))}
+                    </Popup>
+                  </Marker>
+                ))}
+              </MarkerClusterGroup>
             </MapContainer>
           </div>
 
