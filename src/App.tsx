@@ -77,6 +77,8 @@ const App = () => {
   const [filterCity, setFilterCity] = useState('すべて');
   const [filterNeed, setFilterNeed] = useState('すべて');
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [filterPrefecture, setFilterPrefecture] = useState('すべて');
+  const [filterMunicipality, setFilterMunicipality] = useState('すべて');
 
 
   const regionStatsRaw = regionData.map(region => ({
@@ -117,8 +119,21 @@ const App = () => {
     const typeMatch = placeType === 'すべて' || loc.name.includes(placeType) || loc.needs.some((need: string) => need.includes(placeType));
     const equipmentMatch = equipment === 'すべて' || loc.needs.some((need: string) => need.includes(equipment));
     const keywordMatch = searchKeyword === '' || loc.needs.some((need: string) => need.toLowerCase().includes(searchKeyword.toLowerCase())) || loc.name.toLowerCase().includes(searchKeyword.toLowerCase()) || loc.address.toLowerCase().includes(searchKeyword.toLowerCase());
-    return typeMatch && equipmentMatch && keywordMatch;
+    const prefectureMatch = filterPrefecture === 'すべて' || loc.prefecture === filterPrefecture;
+    const municipalityMatch = filterMunicipality === 'すべて' || loc.municipality === filterMunicipality;
+    return typeMatch && equipmentMatch && keywordMatch && prefectureMatch && municipalityMatch;
   });
+
+  // 都道府県・市区町村の絞り込み選択肢は実際に読み込んだ地点データから動的に作る
+  const prefectureOptions = Array.from(new Set(locations.map(loc => loc.prefecture).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ja'));
+  const municipalityOptions = Array.from(
+    new Set(
+      locations
+        .filter(loc => filterPrefecture === 'すべて' || loc.prefecture === filterPrefecture)
+        .map(loc => loc.municipality)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'ja'));
 
   // 埼玉県CSV・東京都GeoJSONの読み込み（両方を統合してlocationsに反映）
   useEffect(() => {
@@ -148,6 +163,8 @@ const App = () => {
               lat,
               lng,
               address: row.住所 || row['住所'] || "",
+              prefecture: row.都道府県 || row['都道府県'] || "",
+              municipality: row.市区町村名 || row['市区町村名'] || "",
               needs: (row.実施支援の主な区分 ?? row['実施支援の主な区分'] ?? "").split(',').map((n: string) => n.trim()).filter(Boolean)
             };
           })
@@ -172,6 +189,8 @@ const App = () => {
             lat: f.geometry?.coordinates?.[1],
             lng: f.geometry?.coordinates?.[0],
             address: f.properties?.address || "",
+            prefecture: "東京都",
+            municipality: f.properties?.municipality || "",
             needs: f.properties?.needs || []
           }))
           .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
@@ -296,6 +315,20 @@ const App = () => {
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>キーワード検索</label>
                   <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="支援内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
+                </div>
+                <div style={{ marginBottom: '12px', flexShrink: 0 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>都道府県</label>
+                  <select value={filterPrefecture} onChange={(e) => { setFilterPrefecture(e.target.value); setFilterMunicipality('すべて'); }} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                    <option value="すべて">すべて</option>
+                    {prefectureOptions.map(pref => <option key={pref} value={pref}>{pref}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '12px', flexShrink: 0 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>市区町村</label>
+                  <select value={filterMunicipality} onChange={(e) => setFilterMunicipality(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                    <option value="すべて">すべて</option>
+                    {municipalityOptions.map(muni => <option key={muni} value={muni}>{muni}</option>)}
+                  </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>場所の種類</label>
