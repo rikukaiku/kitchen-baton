@@ -34,3 +34,9 @@ data/raw/tofukushikyoku_new_geocoded.csv
 data/raw/tokyo_kodomoshokudo_combined.csv
 data/raw/tokyo_kodomoshokudo_final.csv
 data/raw/tokyo_kodomoshokudo_final.geojson
+data/raw/sample_*.csv
+data/raw/koumin_R3.csv
+data/raw/koumin_facilities_raw.csv
+data/raw/koumin_facilities_final.csv
+data/raw/koumin_sources_table.txt
+data/raw/public_facility_sources.txt

@@ -14,6 +14,14 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// 公民館等（施設種別が「公民館」）は緑ピンで区別する
+const KouminIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
 // 地図の視点を切り替える補助コンポーネント
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
@@ -125,7 +133,7 @@ const App = () => {
     .filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
 
   const filteredLocations = locations.filter(loc => {
-    const typeMatch = placeType === 'すべて' || loc.name.includes(placeType) || loc.needs.some((need: string) => need.includes(placeType));
+    const typeMatch = placeType === 'すべて' || loc.type === placeType || loc.name.includes(placeType) || loc.needs.some((need: string) => need.includes(placeType));
     const equipmentMatch = equipment === 'すべて' || loc.needs.some((need: string) => need.includes(equipment));
     const keywordMatch = searchKeyword === '' || loc.needs.some((need: string) => need.toLowerCase().includes(searchKeyword.toLowerCase())) || loc.name.toLowerCase().includes(searchKeyword.toLowerCase()) || loc.address.toLowerCase().includes(searchKeyword.toLowerCase());
     const prefectureMatch = filterPrefecture === 'すべて' || loc.prefecture === filterPrefecture;
@@ -144,16 +152,18 @@ const App = () => {
     )
   ).sort((a, b) => a.localeCompare(b, 'ja'));
 
-  // 埼玉県CSV・東京都GeoJSONの読み込み（両方を統合してlocationsに反映）
+  // 埼玉県CSV・東京都子ども食堂GeoJSON・東京都公民館等GeoJSONの読み込み（すべて統合してlocationsに反映）
   useEffect(() => {
     let saitamaData: any[] = [];
     let tokyoData: any[] = [];
+    let kouminData: any[] = [];
     let saitamaDone = false;
     let tokyoDone = false;
+    let kouminDone = false;
 
     const commit = () => {
-      if (!saitamaDone || !tokyoDone) return;
-      const merged = [...tokyoData, ...saitamaData];
+      if (!saitamaDone || !tokyoDone || !kouminDone) return;
+      const merged = [...tokyoData, ...saitamaData, ...kouminData];
       setLocations(merged.length > 0 ? merged : dummyLocations);
     };
 
@@ -174,6 +184,7 @@ const App = () => {
               address: row.住所 || row['住所'] || "",
               prefecture: row.都道府県 || row['都道府県'] || "",
               municipality: row.市区町村名 || row['市区町村名'] || "",
+              type: '子ども食堂',
               needs: (row.実施支援の主な区分 ?? row['実施支援の主な区分'] ?? "").split(',').map((n: string) => n.trim()).filter(Boolean)
             };
           })
@@ -200,6 +211,7 @@ const App = () => {
             address: f.properties?.address || "",
             prefecture: "東京都",
             municipality: f.properties?.municipality || "",
+            type: '子ども食堂',
             needs: f.properties?.needs || []
           }))
           .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
@@ -209,6 +221,31 @@ const App = () => {
       })
       .finally(() => {
         tokyoDone = true;
+        commit();
+      });
+
+    fetch('/data/koumin_facilities.geojson')
+      .then((res) => res.json())
+      .then((geojson: any) => {
+        kouminData = (geojson.features || [])
+          .map((f: any, index: number) => ({
+            id: `koumin-${index}`,
+            name: f.properties?.name || "名称不明",
+            lat: f.geometry?.coordinates?.[1],
+            lng: f.geometry?.coordinates?.[0],
+            address: f.properties?.address || "",
+            prefecture: "東京都",
+            municipality: f.properties?.municipality || "",
+            type: f.properties?.type || '公民館',
+            needs: []
+          }))
+          .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+      })
+      .catch((error) => {
+        console.error("公民館GeoJSON読み込みエラー:", error);
+      })
+      .finally(() => {
+        kouminDone = true;
         commit();
       });
   }, []);
@@ -406,11 +443,15 @@ const App = () => {
                 <Marker
                   key={loc.id}
                   position={[loc.lat, loc.lng]}
+                  icon={loc.type === '公民館' ? KouminIcon : DefaultIcon}
                   ref={(el) => { markerRefs.current[loc.id] = el; }}
                 >
                   <Popup>
                     <strong>{loc.name}</strong><br />
                     <span style={{ fontSize: '0.8rem' }}>{loc.address}</span><br />
+                    {loc.type && (
+                      <span style={{ fontSize: '0.7rem', background: '#e3f5e6', color: '#2e7d32', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{loc.type}</span>
+                    )}
                     {loc.needs.map((n: string) => (
                       <span key={n} style={{ fontSize: '0.7rem', background: '#edf2fb', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{n}</span>
                     ))}
