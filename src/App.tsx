@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
-// import { useRef, useMemo } from 'react';
+// import { useMemo } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Papa from 'papaparse';
@@ -79,6 +79,15 @@ const App = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterPrefecture, setFilterPrefecture] = useState('すべて');
   const [filterMunicipality, setFilterMunicipality] = useState('すべて');
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const markerRefs = useRef<Record<string, L.Marker | null>>({});
+
+  // カード選択時に対応するピンの吹き出しを開く
+  useEffect(() => {
+    if (!selectedLocationId) return;
+    const marker = markerRefs.current[selectedLocationId];
+    marker?.openPopup();
+  }, [selectedLocationId]);
 
 
   const regionStatsRaw = regionData.map(region => ({
@@ -224,11 +233,19 @@ const App = () => {
     ? { width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', height: 'auto', overflow: 'visible', marginBottom: '12px' }
     : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflow: 'hidden' };
   const cardListStyle: React.CSSProperties = isMobile
-    ? { height: '320px', overflow: 'auto' }
-    : { height: '800px', overflow: 'scroll' };
+    ? { maxHeight: '320px', overflow: 'auto' }
+    : { maxHeight: '50vh', overflow: 'auto' };
   const searchListStyle: React.CSSProperties = isMobile
-    ? { height: '220px', overflow: 'auto' }
-    : { height: '800px', overflow: 'scroll' };
+    ? { maxHeight: '220px', overflow: 'auto' }
+    : { maxHeight: '50vh', overflow: 'auto' };
+  // サイドバー全体（フィルタ＋一覧）が縦に収まりきらない場合は、この要素自体がスクロールする
+  // （一覧のmaxHeightだけでは、フィルタ項目が多い/画面が低いときに一覧が0pxまで潰れてしまうため）
+  const sidebarCardStyle: React.CSSProperties = isMobile
+    ? { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flexShrink: 0 }
+    : { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flex: 1, minHeight: 0, overflow: 'auto' };
+  const tabContentStyle: React.CSSProperties = isMobile
+    ? { display: 'flex', flexDirection: 'column', height: '100%' }
+    : { display: 'flex', flexDirection: 'column' };
 
   return (
     <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: isMobile ? 'auto' : 'hidden', background: '#f4f6fb' }}>
@@ -246,14 +263,14 @@ const App = () => {
 
       <div style={mainLayoutStyle}>
         <section style={sidebarStyle}>
-          <div style={{ background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flexShrink: 0 }}>
+          <div style={sidebarCardStyle}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
               <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>ニーズアラート</button>
               <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#1976d2' : '#edf2fb', color: activeTab === 'search' ? '#fff' : '#333', cursor: 'pointer' }}>場所を探す</button>
             </div>
 
             {activeTab === 'alert' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>市町村フィルタ</label>
                   <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
@@ -311,7 +328,7 @@ const App = () => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>キーワード検索</label>
                   <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="支援内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
@@ -356,6 +373,7 @@ const App = () => {
                     <div key={loc.id} onClick={() => {
                       if (Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
                         setMapConfig({ center: [loc.lat, loc.lng], zoom: 15 });
+                        setSelectedLocationId(loc.id);
                       }
                     }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#f8fbff', border: '1px solid #e3eaf7', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>{loc.name}</div>
@@ -385,7 +403,11 @@ const App = () => {
                 />
               ))}
               {locations.map(loc => (
-                <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+                <Marker
+                  key={loc.id}
+                  position={[loc.lat, loc.lng]}
+                  ref={(el) => { markerRefs.current[loc.id] = el; }}
+                >
                   <Popup>
                     <strong>{loc.name}</strong><br />
                     <span style={{ fontSize: '0.8rem' }}>{loc.address}</span><br />
