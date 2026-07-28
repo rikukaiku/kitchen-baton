@@ -40,3 +40,5 @@ data/raw/koumin_facilities_raw.csv
 data/raw/koumin_facilities_final.csv
 data/raw/koumin_sources_table.txt
 data/raw/public_facility_sources.txt
+data/raw/municipality_kana.csv
+data/raw/municipality_kana_js.txt
