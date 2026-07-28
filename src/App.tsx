@@ -120,21 +120,30 @@ const App = () => {
     return typeMatch && equipmentMatch && keywordMatch;
   });
 
-  // CSVの読み込み
+  // 埼玉県CSV・東京都GeoJSONの読み込み（両方を統合してlocationsに反映）
   useEffect(() => {
-    console.log("CSV読み込み開始");
+    let saitamaData: any[] = [];
+    let tokyoData: any[] = [];
+    let saitamaDone = false;
+    let tokyoDone = false;
+
+    const commit = () => {
+      if (!saitamaDone || !tokyoDone) return;
+      const merged = [...tokyoData, ...saitamaData];
+      setLocations(merged.length > 0 ? merged : dummyLocations);
+    };
+
     Papa.parse('/saitama.csv', {
       download: true,
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        console.log("CSV読み込み完了:", results.data.length, "行");
-        const formattedData = results.data
+        saitamaData = results.data
           .map((row: any, index: number) => {
             const lat = parseFloat(row.緯度 ?? row['緯度']);
             const lng = parseFloat(row.経度 ?? row['経 度'] ?? row['経度']);
             return {
-              id: `csv-${index}`,
+              id: `saitama-${index}`,
               name: row.名称 || row['名称'] || "名称不明",
               lat,
               lng,
@@ -143,18 +152,37 @@ const App = () => {
             };
           })
           .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
-        console.log("フィルタ後データ:", formattedData.length, "件");
-        if (formattedData.length > 0) {
-          setLocations(formattedData);
-        } else {
-          setLocations(dummyLocations);
-        }
+        saitamaDone = true;
+        commit();
       },
       error: (error) => {
-        console.error("CSV読み込みエラー:", error);
-        setLocations(dummyLocations);
+        console.error("埼玉CSV読み込みエラー:", error);
+        saitamaDone = true;
+        commit();
       }
     });
+
+    fetch('/data/tokyo_kodomoshokudo.geojson')
+      .then((res) => res.json())
+      .then((geojson: any) => {
+        tokyoData = (geojson.features || [])
+          .map((f: any, index: number) => ({
+            id: `tokyo-${index}`,
+            name: f.properties?.name || "名称不明",
+            lat: f.geometry?.coordinates?.[1],
+            lng: f.geometry?.coordinates?.[0],
+            address: f.properties?.address || "",
+            needs: f.properties?.needs || []
+          }))
+          .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+      })
+      .catch((error) => {
+        console.error("東京都GeoJSON読み込みエラー:", error);
+      })
+      .finally(() => {
+        tokyoDone = true;
+        commit();
+      });
   }, []);
 
   // SSR/ビルド時 window未定義対策: isMobileをuseState+useEffectで判定
@@ -340,6 +368,12 @@ const App = () => {
         </main>
 
       </div>
+
+      <footer style={{ padding: '10px 24px', fontSize: '0.72rem', color: '#8a94a6', textAlign: 'center' }}>
+        子ども食堂データ出典：東京都オープンデータカタログ（区市町村各データセット）／東京都福祉局「子供食堂推進事業」（いずれも
+        <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noreferrer" style={{ color: '#8a94a6' }}> CC BY 4.0</a>
+        ）。詳細は <code>data/SOURCES.md</code> を参照。
+      </footer>
     </div>
   );
 };

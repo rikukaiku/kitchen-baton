@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# データ収集パイプラインの中間生成物・生ダウンロード・引き継ぎ時点の旧データ
+# （data/tokyo_kodomoshokudo_final.csv と public/data/*.geojson が最新の正式版）
+data/raw/*.xlsx
+data/raw/population_3-1.csv
+data/raw/dedup_report.csv
+data/raw/tofukushikyoku_normalized.csv
+data/raw/tofukushikyoku_new_only.csv
+data/raw/tofukushikyoku_new_geocoded.csv
+data/raw/tokyo_kodomoshokudo_combined.csv
+data/raw/tokyo_kodomoshokudo_final.csv
+data/raw/tokyo_kodomoshokudo_final.geojson
