@@ -71,7 +71,7 @@ const App = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [mapConfig, setMapConfig] = useState<{center: [number, number], zoom: number}>({ center: [35.765, 139.645], zoom: 11 });
   const [showNeeds, setShowNeeds] = useState(true);
-  const [activeTab, setActiveTab] = useState<'alert' | 'search'>('alert');
+  const [activeTab, setActiveTab] = useState<'alert' | 'search'>('search');
   const [placeType, setPlaceType] = useState('すべて');
   const [equipment, setEquipment] = useState('すべて');
   const [filterCity, setFilterCity] = useState('すべて');
