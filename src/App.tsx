@@ -215,9 +215,12 @@ const dummyLocations = [
   { id: 3, name: "地域子ども食堂 あかり", lat: 35.742, lng: 139.605, address: "石神井公園内", needs: ["学習支援", "遊び場提供"] },
 ];
 
+// 初期表示は東京都庁（新宿区）付近。23区のほぼ中心にあたる
+const DEFAULT_MAP_CONFIG: { center: [number, number], zoom: number } = { center: [35.6895, 139.6917], zoom: 11 };
+
 const App = () => {
   const [locations, setLocations] = useState<any[]>([]);
-  const [mapConfig, setMapConfig] = useState<{center: [number, number], zoom: number}>({ center: [35.765, 139.645], zoom: 11 });
+  const [mapConfig, setMapConfig] = useState<{center: [number, number], zoom: number}>(DEFAULT_MAP_CONFIG);
   const [showNeeds, setShowNeeds] = useState(true);
   const [activeTab, setActiveTab] = useState<'alert' | 'search'>('search');
   const [placeTypes, setPlaceTypes] = useState<string[]>([]);
@@ -236,6 +239,19 @@ const App = () => {
     const marker = markerRefs.current[selectedLocationId];
     marker?.openPopup();
   }, [selectedLocationId]);
+
+  // 地図の表示位置・検索条件をすべて初期状態に戻す
+  const resetAll = () => {
+    setMapConfig(DEFAULT_MAP_CONFIG);
+    setPlaceTypes([]);
+    setEquipment('すべて');
+    setFilterCity('すべて');
+    setFilterNeed('すべて');
+    setSearchKeyword('');
+    setFilterPrefecture('すべて');
+    setFilterMunicipality('すべて');
+    setSelectedLocationId(null);
+  };
 
 
   const regionStatsRaw = regionData.map(region => ({
@@ -433,6 +449,7 @@ const App = () => {
           <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>子ども食堂・支援拠点の可視化デモ</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
           <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
           <button style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
         </div>

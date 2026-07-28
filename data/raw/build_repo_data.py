@@ -99,7 +99,17 @@ def main():
         if pd.isna(r["_自治体名"]):
             continue
         lines.append(f"| {r['_自治体名']} | {r['_データセット名']} | {r['_ライセンス']} | {r['_取得元URL']} |")
-    SOURCES_OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # SOURCES.mdには他のデータ（公民館等）の出典セクションが「## 」見出しで追記されている
+    # ことがあるため、このスクリプトが担当する冒頭セクションだけを差し替え、それ以降は残す
+    other_sections = ""
+    if SOURCES_OUT.exists():
+        existing = SOURCES_OUT.read_text(encoding="utf-8")
+        marker = existing.find("\n## ")
+        if marker != -1:
+            other_sections = existing[marker:]
+
+    SOURCES_OUT.write_text("\n".join(lines) + "\n" + other_sections, encoding="utf-8")
     print(f"出典一覧出力: {len(sources)} 件 → {SOURCES_OUT}")
 
 
