@@ -51,34 +51,6 @@ function MapResizeFixer() {
   return null;
 }
 
-// 地域ニーズの統計データ（サイドバー用）
-const regionData = [
-  { id: 'n1', name: "練馬区・石神井", children: 15600, facilities: 2, lat: 35.742, lng: 139.605 },
-  { id: 'n2', name: "練馬区・光が丘", children: 12000, facilities: 3, lat: 35.758, lng: 139.627 },
-  { id: 's1', name: "渋谷区・本町/笹塚", children: 4200, facilities: 1, lat: 35.676, lng: 139.667 },
-  { id: 's2', name: "渋谷区・上原/富ヶ谷", children: 3100, facilities: 2, lat: 35.668, lng: 139.684 },
-  // さいたま市の小学校データ（PDFより、緯度経度を実際の位置に修正）
-  { id: 'sa-takasago', name: "さいたま市・高砂小学校", children: 1042, facilities: 1, lat: 35.8714, lng: 139.6522 },
-  { id: 'sa-tokiwa', name: "さいたま市・常盤小学校", children: 1111, facilities: 1, lat: 35.8542, lng: 139.6411 },
-  { id: 'sa-kizaki', name: "さいたま市・木崎小学校", children: 1027, facilities: 1, lat: 35.8644, lng: 139.6322 },
-  { id: 'sa-yatada', name: "さいたま市・谷田小学校", children: 598, facilities: 1, lat: 35.8811, lng: 139.6611 },
-  { id: 'sa-nakamoto', name: "さいたま市・仲本小学校", children: 871, facilities: 1, lat: 35.8444, lng: 139.6222 },
-  { id: 'sa-honto', name: "さいたま市・本太小学校", children: 908, facilities: 1, lat: 35.8711, lng: 139.6722 },
-  { id: 'sa-mimuro', name: "さいたま市・三室小学校", children: 899, facilities: 1, lat: 35.8511, lng: 139.6111 },
-  { id: 'sa-omagi', name: "さいたま市・尾間木小学校", children: 1000, facilities: 1, lat: 35.8611, lng: 139.6811 },
-  { id: 'sa-minamiura', name: "さいたま市・南浦和小学校", children: 847, facilities: 1, lat: 35.8311, lng: 139.6311 },
-  { id: 'sa-urawa-bessho', name: "さいたま市・浦和別所小学校", children: 1203, facilities: 1, lat: 35.8411, lng: 139.6911 },
-  // 他の小学校も追加可能（ここでは一部のみ）
-];
-
-// 子どもの人口データ（2026年2月 住民基本台帳）に基づく分析ロジック
-const calculateNeed = (children: number, facilities: number): string => {
-  const needScore = children / facilities;
-  if (needScore > 1500) return "高";
-  if (needScore > 1000) return "中";
-  return "低";
-};
-
 // 2点間の距離（km）をハーバサイン公式で計算
 const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371; // 地球半径km
@@ -241,6 +213,7 @@ const DEFAULT_MAP_CONFIG: { center: [number, number], zoom: number } = { center:
 
 const App = () => {
   const [locations, setLocations] = useState<any[]>([]);
+  const [regionData, setRegionData] = useState<any[]>([]);
   const [mapConfig, setMapConfig] = useState<{center: [number, number], zoom: number}>(DEFAULT_MAP_CONFIG);
   const [showNeeds, setShowNeeds] = useState(true);
   const [activeTab, setActiveTab] = useState<'alert' | 'search'>('search');
@@ -298,31 +271,26 @@ const App = () => {
   };
 
 
-  const regionStatsRaw = regionData.map(region => ({
-    ...region,
-    need: calculateNeed(region.children, region.facilities)
-  }));
+  const regionStatsRaw = regionData;
 
-  // 「ニーズ高」かつ人口多い、かつ近隣に子ども食堂がない地域を抽出
+  // 「ニーズ高」かつ人口が多く、かつ食堂が1件もない区市町村を特に支援が必要な地域として抽出
   const HIGH_NEED_POP_THRESHOLD = 10000; // 人口多い基準
-  const NO_FACILITY_RADIUS_KM = 2.0; // 2km以内に施設がなければ「周りにない」
-  // regionごとに近隣施設があるか判定
-  function hasNearbyFacility(region: any, locations: any[], radiusKm: number) {
-    return locations.some(loc => distanceKm(region.lat, region.lng, loc.lat, loc.lng) < radiusKm);
-  }
-
   const highNeedSpecialRegions = regionStatsRaw.filter(region =>
     region.need === '高' &&
     region.children >= HIGH_NEED_POP_THRESHOLD &&
-    !hasNearbyFacility(region, locations, NO_FACILITY_RADIUS_KM)
+    region.facilities === 0
   );
 
   const regionStats = regionStatsRaw
+    .slice()
     .sort((a, b) => {
       const order: Record<string, number> = { '高': 3, '中': 2, '低': 1 };
       return order[b.need] - order[a.need];
     })
-    .filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
+    .filter(region => (filterCity === 'すべて' || region.name === filterCity) && (filterNeed === 'すべて' || region.need === filterNeed));
+
+  // 市町村フィルタの選択肢は実データから動的に生成（五十音順）
+  const regionCityOptions = Array.from(new Set(regionData.map(r => r.name))).sort(sortByKana);
 
   let filteredLocations = locations.filter(loc => {
     const typeMatch = placeTypes.length === 0 || placeTypes.some(pt => loc.type === pt || loc.name.includes(pt) || loc.needs.some((need: string) => need.includes(pt)));
@@ -449,6 +417,16 @@ const App = () => {
       });
   }, []);
 
+  // 区市町村別の子ども人口×食堂数ギャップ分析（ニーズアラート用）の読み込み
+  useEffect(() => {
+    fetch('/data/gap_analysis.json')
+      .then((res) => res.json())
+      .then((data: any[]) => setRegionData(data))
+      .catch((error) => {
+        console.error("ギャップ分析データ読み込みエラー:", error);
+      });
+  }, []);
+
   // SSR/ビルド時 window未定義対策: isMobileをuseState+useEffectで判定
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -512,9 +490,7 @@ const App = () => {
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>市町村フィルタ</label>
                   <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
                     <option value="すべて">すべて</option>
-                    <option value="練馬区">練馬区</option>
-                    <option value="渋谷区">渋谷区</option>
-                    <option value="さいたま市">さいたま市</option>
+                    {regionCityOptions.map(city => <option key={city} value={city}>{city}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
@@ -544,7 +520,11 @@ const App = () => {
                   )}
                   {/* 通常リスト */}
                   {regionStats.map(region => {
-                    const message = region.need === '高' ? '区内で最も子どもの数が多い地域' : region.need === '中' ? '中程度のニーズがある地域' : '比較的安定した地域';
+                    const message = region.facilities === 0
+                      ? '子ども食堂が1件もありません'
+                      : region.need === '高' ? '子どもの人口に対して食堂が少ない地域'
+                      : region.need === '中' ? '中程度のニーズがある地域'
+                      : '子どもの人口に対して食堂は充足傾向';
                     // ニーズ色分け
                     const needColor = region.need === '高' ? '#e74c3c' : region.need === '中' ? '#f39c12' : '#1976d2';
                     const needBg = region.need === '高' ? '#fdeaea' : region.need === '中' ? '#fff6e3' : '#e3eaf7';
