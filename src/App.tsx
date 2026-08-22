@@ -7,6 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import L from 'leaflet';
 import Papa from 'papaparse';
+import RegisterPlaceModal from './RegisterPlaceModal';
 
 // Leafletアイコンの修正（デフォルトだと表示されないことがあるため）
 const DefaultIcon = L.icon({
@@ -227,6 +228,7 @@ const App = () => {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
   // 現在地を取得して地図を移動し、以降は検索結果を現在地からの距離順に並べる
@@ -472,7 +474,7 @@ const App = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
           <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? '空白地域表示中' : '空白地域非表示'}</button>
-          <button style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
+          <button onClick={() => setShowRegisterModal(true)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
         </div>
       </header>
 
@@ -501,6 +503,11 @@ const App = () => {
                     <option value="中">中</option>
                     <option value="低">低</option>
                   </select>
+                </div>
+                <div style={{ marginBottom: '12px', fontSize: '0.78rem', color: '#555', background: '#f0f6ff', border: '1px solid #d5e5fb', borderRadius: '10px', padding: '8px 10px', flexShrink: 0 }}>
+                  ここでは区市町村単位で見ています。学区ごとの空白地帯を確認したい場合は
+                  <a href="https://kodomoshokudo-gakkumap.gaccom.jp/" target="_blank" rel="noreferrer" style={{ color: '#1976d2', fontWeight: 700 }}>こちら（ガッコム×むすびえ 学区マップ）</a>
+                  もご覧ください。
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が手薄な地域を一覧表示</div>
                 <div style={cardListStyle}>
@@ -681,6 +688,8 @@ const App = () => {
         <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noreferrer" style={{ color: '#8a94a6' }}> CC BY 4.0</a>
         ）。詳細は <code>data/SOURCES.md</code> を参照。
       </footer>
+
+      {showRegisterModal && <RegisterPlaceModal onClose={() => setShowRegisterModal(false)} />}
     </div>
   );
 };
