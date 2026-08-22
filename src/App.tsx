@@ -7,7 +7,9 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import L from 'leaflet';
 import Papa from 'papaparse';
-import RegisterPlaceModal from './RegisterPlaceModal';
+
+// edoさんがGoogleフォームを用意でき次第、実際のURL（.../viewform）に差し替える
+const GOOGLE_FORM_VIEW_URL = 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform';
 
 // Leafletアイコンの修正（デフォルトだと表示されないことがあるため）
 const DefaultIcon = L.icon({
@@ -234,7 +236,6 @@ const App = () => {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
   // 現在地を取得して地図を移動し、以降は検索結果を現在地からの距離順に並べる
@@ -480,7 +481,7 @@ const App = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
           <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff8ee' : '#e8a56c', color: showNeeds ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
-          <button onClick={() => setShowRegisterModal(true)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
+          <a href={GOOGLE_FORM_VIEW_URL} target="_blank" rel="noreferrer" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}>+ 場所を登録</a>
         </div>
       </header>
 
@@ -695,7 +696,6 @@ const App = () => {
         ）。詳細は <code>data/SOURCES.md</code> を参照。
       </footer>
 
-      {showRegisterModal && <RegisterPlaceModal onClose={() => setShowRegisterModal(false)} />}
     </div>
   );
 };
