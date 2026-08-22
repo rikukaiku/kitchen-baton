@@ -273,7 +273,7 @@ const App = () => {
 
   const regionStatsRaw = regionData;
 
-  // 「ニーズ高」かつ人口が多く、かつ食堂が1件もない区市町村を特に支援が必要な地域として抽出
+  // 不足度「高」かつ人口が多く、かつ食堂が1件もない区市町村を特に支援が必要な地域として抽出
   const HIGH_NEED_POP_THRESHOLD = 10000; // 人口多い基準
   const highNeedSpecialRegions = regionStatsRaw.filter(region =>
     region.need === '高' &&
@@ -417,7 +417,7 @@ const App = () => {
       });
   }, []);
 
-  // 区市町村別の子ども人口×食堂数ギャップ分析（ニーズアラート用）の読み込み
+  // 区市町村別の子ども人口×食堂数ギャップ分析（空白地域タブ用）の読み込み
   useEffect(() => {
     fetch('/data/gap_analysis.json')
       .then((res) => res.json())
@@ -471,7 +471,7 @@ const App = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
-          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
+          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? '空白地域表示中' : '空白地域非表示'}</button>
           <button style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
         </div>
       </header>
@@ -480,7 +480,7 @@ const App = () => {
         <section style={sidebarStyle}>
           <div style={sidebarCardStyle}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>ニーズアラート</button>
+              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>空白地域</button>
               <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#1976d2' : '#edf2fb', color: activeTab === 'search' ? '#fff' : '#333', cursor: 'pointer' }}>場所を探す</button>
             </div>
 
@@ -494,7 +494,7 @@ const App = () => {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>ニーズレベルフィルタ</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>不足レベルフィルタ</label>
                   <select value={filterNeed} onChange={(e) => setFilterNeed(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
                     <option value="すべて">すべて</option>
                     <option value="高">高</option>
@@ -502,7 +502,7 @@ const App = () => {
                     <option value="低">低</option>
                   </select>
                 </div>
-                <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>高ニーズ地域を一覧表示</div>
+                <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が手薄な地域を一覧表示</div>
                 <div style={cardListStyle}>
                   {/* 特別警告エリア */}
                   {highNeedSpecialRegions.length > 0 && (
@@ -511,7 +511,7 @@ const App = () => {
                       {highNeedSpecialRegions.map(region => (
                         <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #e3eaf7', cursor: 'pointer', fontWeight: 700 }}>
                           {region.name}
-                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>ニーズ 高</span>
+                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>不足度 高</span>
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[子ども食堂が近隣にありません]</span>
                           <div style={{ fontSize: '0.8rem', color: '#b94a48', marginTop: '2px' }}>人口: {region.children.toLocaleString()}人</div>
                         </div>
@@ -523,9 +523,9 @@ const App = () => {
                     const message = region.facilities === 0
                       ? '子ども食堂が1件もありません'
                       : region.need === '高' ? '子どもの人口に対して食堂が少ない地域'
-                      : region.need === '中' ? '中程度のニーズがある地域'
+                      : region.need === '中' ? '食堂がやや手薄な地域'
                       : '子どもの人口に対して食堂は充足傾向';
-                    // ニーズ色分け
+                    // 不足度で色分け
                     const needColor = region.need === '高' ? '#e74c3c' : region.need === '中' ? '#f39c12' : '#1976d2';
                     const needBg = region.need === '高' ? '#fdeaea' : region.need === '中' ? '#fff6e3' : '#e3eaf7';
                     return (
@@ -533,7 +533,7 @@ const App = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ fontSize: '0.8rem', color: needColor, background: needBg, borderRadius: '8px', padding: '2px 10px', fontWeight: 900, letterSpacing: '0.05em', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                            ニーズ {region.need}
+                            不足度 {region.need}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{message}</div>
