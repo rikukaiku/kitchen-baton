@@ -475,7 +475,7 @@ const App = () => {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
-          <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>子ども食堂・支援拠点の可視化デモ</div>
+          <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>子ども食堂・支援拠点の可視化マップ</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
