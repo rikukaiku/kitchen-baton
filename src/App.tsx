@@ -28,16 +28,16 @@ const makeColorIcon = (color: string) => L.icon({
 // 公民館等（施設種別が「公民館」）は緑ピンで区別する
 const KouminIcon = makeColorIcon('green');
 
-// 現在地マーカーはオレンジで区別する
-const UserLocationIcon = makeColorIcon('orange');
+// 現在地マーカーはグレーで区別する（種類ごとの色と被らないように）
+const UserLocationIcon = makeColorIcon('grey');
 
-// 場所の種類ごとにピンの色を変える（凡例と対応）
+// 場所の種類ごとにピンの色を変える（ブランドカラーのオレンジ系＝子ども食堂を主役に）
 const TYPE_ICONS: Record<string, L.Icon> = {
-  '子ども食堂': DefaultIcon,
+  '子ども食堂': makeColorIcon('orange'),
   '公民館': KouminIcon,
   'フードパントリー': makeColorIcon('red'),
-  '空き家活用': makeColorIcon('grey'),
-  '社員食堂': makeColorIcon('gold'),
+  '空き家活用': makeColorIcon('violet'),
+  '社員食堂': makeColorIcon('blue'),
 };
 
 // 地図の視点を切り替える補助コンポーネント
@@ -470,17 +470,19 @@ const App = () => {
     : { display: 'flex', flexDirection: 'column' };
 
   return (
-    <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: isMobile ? 'auto' : 'hidden', background: '#f4f6fb' }}>
+    <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Zen Maru Gothic', sans-serif", overflow: isMobile ? 'auto' : 'hidden', background: '#fdf6ec' }}>
       {/* ヘッダー */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#1976d2', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
           <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>子ども食堂・支援拠点の可視化デモ</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
-          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
-          <button onClick={() => setShowRegisterModal(true)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
+          <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
+          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff8ee' : '#e8a56c', color: showNeeds ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
+          {/* 一時的に非表示: edoさんの本実装（Issue #4）に差し替え予定
+          <button onClick={() => setShowRegisterModal(true)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
+          */}
         </div>
       </header>
 
@@ -488,8 +490,8 @@ const App = () => {
         <section style={sidebarStyle}>
           <div style={sidebarCardStyle}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>ニーズアラート</button>
-              <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#1976d2' : '#edf2fb', color: activeTab === 'search' ? '#fff' : '#333', cursor: 'pointer' }}>場所を探す</button>
+              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'alert' ? '#fff' : '#8a5f3a', cursor: 'pointer' }}>ニーズアラート</button>
+              <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'search' ? '#fff' : '#8a5f3a', cursor: 'pointer' }}>場所を探す</button>
             </div>
 
             {activeTab === 'alert' ? (
@@ -512,7 +514,7 @@ const App = () => {
                 </div>
                 <div style={{ marginBottom: '12px', fontSize: '0.78rem', color: '#555', background: '#f0f6ff', border: '1px solid #d5e5fb', borderRadius: '10px', padding: '8px 10px', flexShrink: 0 }}>
                   ここでは区市町村単位で見ています。学区ごとの空白地帯を確認したい場合は
-                  <a href="https://kodomoshokudo-gakkumap.gaccom.jp/" target="_blank" rel="noreferrer" style={{ color: '#1976d2', fontWeight: 700 }}>こちら（ガッコム×むすびえ 学区マップ）</a>
+                  <a href="https://kodomoshokudo-gakkumap.gaccom.jp/" target="_blank" rel="noreferrer" style={{ color: '#c15a2c', fontWeight: 700 }}>こちら（ガッコム×むすびえ 学区マップ）</a>
                   もご覧ください。
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が求められている地域を一覧表示</div>
@@ -522,7 +524,7 @@ const App = () => {
                     <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
                       <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に支援が望まれている地域</div>
                       {highNeedSpecialRegions.map(region => (
-                        <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #e3eaf7', cursor: 'pointer', fontWeight: 700 }}>
+                        <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #f0dcbc', cursor: 'pointer', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>不足度 高</span>
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[子ども食堂が近隣にありません]</span>
@@ -542,7 +544,7 @@ const App = () => {
                     const needColor = region.need === '高' ? '#e74c3c' : region.need === '中' ? '#f39c12' : '#1976d2';
                     const needBg = region.need === '高' ? '#fdeaea' : region.need === '中' ? '#fff6e3' : '#e3eaf7';
                     return (
-                      <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#f8fbff', border: '1px solid #e3eaf7', cursor: 'pointer' }}>
+                      <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#fffaf2', border: '1px solid #f0dcbc', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ fontSize: '0.8rem', color: needColor, background: needBg, borderRadius: '8px', padding: '2px 10px', fontWeight: 900, letterSpacing: '0.05em', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -562,7 +564,7 @@ const App = () => {
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <button
                     onClick={userLocation ? () => { setUserLocation(null); setLocationStatus('idle'); } : findNearby}
-                    style={{ width: '100%', border: userLocation ? '1px solid #1976d2' : 'none', borderRadius: '12px', padding: '10px 0', background: userLocation ? '#e3eaf7' : '#1976d2', color: userLocation ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                    style={{ width: '100%', border: userLocation ? '1px solid #dd8a4e' : 'none', borderRadius: '12px', padding: '10px 0', background: userLocation ? '#fbe6d3' : '#dd8a4e', color: userLocation ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
                   >
                     {locationStatus === 'loading' ? '現在地を取得中…' : userLocation ? '📍 現在地からの距離順で表示中（解除）' : '📍 現在地から探す'}
                   </button>
@@ -594,7 +596,7 @@ const App = () => {
                     {['子ども食堂', 'フードパントリー', '空き家活用', '社員食堂', '公民館'].map(t => {
                       const checked = placeTypes.includes(t);
                       return (
-                        <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '999px', border: checked ? '1px solid #1976d2' : '1px solid #ccd6e8', background: checked ? '#e3eaf7' : '#fff', color: checked ? '#1976d2' : '#555', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
+                        <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '999px', border: checked ? '1px solid #dd8a4e' : '1px solid #e8c193', background: checked ? '#fbe6d3' : '#fff', color: checked ? '#c15a2c' : '#a97a4f', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
                           <input
                             type="checkbox"
                             checked={checked}
@@ -624,11 +626,11 @@ const App = () => {
                         setMapConfig({ center: [loc.lat, loc.lng], zoom: 15 });
                         setSelectedLocationId(loc.id);
                       }
-                    }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#f8fbff', border: '1px solid #e3eaf7', cursor: 'pointer' }}>
+                    }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#fffaf2', border: '1px solid #f0dcbc', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
                         <span>{loc.name}</span>
                         {typeof loc.distanceKm === 'number' && (
-                          <span style={{ fontSize: '0.75rem', color: '#1976d2', background: '#e3eaf7', borderRadius: '8px', padding: '2px 8px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>{formatDistance(loc.distanceKm)}</span>
+                          <span style={{ fontSize: '0.75rem', color: '#c15a2c', background: '#fbe6d3', borderRadius: '8px', padding: '2px 8px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>{formatDistance(loc.distanceKm)}</span>
                         )}
                       </div>
                       <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{loc.address}</div>
