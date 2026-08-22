@@ -15,8 +15,8 @@ export default defineConfig({
         description: '子ども食堂・支援拠点の可視化アプリ',
         start_url: '/',
         display: 'standalone',
-        background_color: '#f4f6fb',
-        theme_color: '#1976d2',
+        background_color: '#fdf6ec',
+        theme_color: '#dd8a4e',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
