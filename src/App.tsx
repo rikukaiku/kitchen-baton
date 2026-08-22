@@ -18,21 +18,27 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// 公民館等（施設種別が「公民館」）は緑ピンで区別する
-const KouminIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+const makeColorIcon = (color: string) => L.icon({
+  iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
 
+// 公民館等（施設種別が「公民館」）は緑ピンで区別する
+const KouminIcon = makeColorIcon('green');
+
 // 現在地マーカーはオレンジで区別する
-const UserLocationIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+const UserLocationIcon = makeColorIcon('orange');
+
+// 場所の種類ごとにピンの色を変える（凡例と対応）
+const TYPE_ICONS: Record<string, L.Icon> = {
+  '子ども食堂': DefaultIcon,
+  '公民館': KouminIcon,
+  'フードパントリー': makeColorIcon('red'),
+  '空き家活用': makeColorIcon('grey'),
+  '社員食堂': makeColorIcon('gold'),
+};
 
 // 地図の視点を切り替える補助コンポーネント
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
@@ -419,7 +425,7 @@ const App = () => {
       });
   }, []);
 
-  // 区市町村別の子ども人口×食堂数ギャップ分析（空白地域タブ用）の読み込み
+  // 区市町村別の子ども人口×食堂数ギャップ分析（ニーズアラートタブ用）の読み込み
   useEffect(() => {
     fetch('/data/gap_analysis.json')
       .then((res) => res.json())
@@ -473,7 +479,7 @@ const App = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
-          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? '空白地域表示中' : '空白地域非表示'}</button>
+          <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff' : '#4dabf5', color: showNeeds ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
           <button onClick={() => setShowRegisterModal(true)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff', color: '#1976d2', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 場所を登録</button>
         </div>
       </header>
@@ -482,7 +488,7 @@ const App = () => {
         <section style={sidebarStyle}>
           <div style={sidebarCardStyle}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>空白地域</button>
+              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#1976d2' : '#edf2fb', color: activeTab === 'alert' ? '#fff' : '#333', cursor: 'pointer' }}>ニーズアラート</button>
               <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#1976d2' : '#edf2fb', color: activeTab === 'search' ? '#fff' : '#333', cursor: 'pointer' }}>場所を探す</button>
             </div>
 
@@ -509,12 +515,12 @@ const App = () => {
                   <a href="https://kodomoshokudo-gakkumap.gaccom.jp/" target="_blank" rel="noreferrer" style={{ color: '#1976d2', fontWeight: 700 }}>こちら（ガッコム×むすびえ 学区マップ）</a>
                   もご覧ください。
                 </div>
-                <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が手薄な地域を一覧表示</div>
+                <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が求められている地域を一覧表示</div>
                 <div style={cardListStyle}>
                   {/* 特別警告エリア */}
                   {highNeedSpecialRegions.length > 0 && (
                     <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
-                      <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に支援が必要な地域</div>
+                      <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に支援が望まれている地域</div>
                       {highNeedSpecialRegions.map(region => (
                         <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #e3eaf7', cursor: 'pointer', fontWeight: 700 }}>
                           {region.name}
@@ -529,8 +535,8 @@ const App = () => {
                   {regionStats.map(region => {
                     const message = region.facilities === 0
                       ? '子ども食堂が1件もありません'
-                      : region.need === '高' ? '子どもの人口に対して食堂が少ない地域'
-                      : region.need === '中' ? '食堂がやや手薄な地域'
+                      : region.need === '高' ? '子どもの人口に対して食堂が求められている地域'
+                      : region.need === '中' ? '食堂がやや求められている地域'
                       : '子どもの人口に対して食堂は充足傾向';
                     // 不足度で色分け
                     const needColor = region.need === '高' ? '#e74c3c' : region.need === '中' ? '#f39c12' : '#1976d2';
@@ -655,7 +661,7 @@ const App = () => {
                   <Marker
                     key={loc.id}
                     position={[loc.lat, loc.lng]}
-                    icon={loc.type === '公民館' ? KouminIcon : DefaultIcon}
+                    icon={TYPE_ICONS[loc.type] || DefaultIcon}
                     ref={(el) => { markerRefs.current[loc.id] = el; }}
                   >
                     <Popup>
