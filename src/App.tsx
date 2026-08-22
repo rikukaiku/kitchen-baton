@@ -25,6 +25,14 @@ const KouminIcon = L.icon({
   iconAnchor: [12, 41],
 });
 
+// 現在地マーカーはオレンジで区別する
+const UserLocationIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
 // 地図の視点を切り替える補助コンポーネント
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
@@ -70,6 +78,19 @@ const calculateNeed = (children: number, facilities: number): string => {
   if (needScore > 1000) return "中";
   return "低";
 };
+
+// 2点間の距離（km）をハーバサイン公式で計算
+const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371; // 地球半径km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// 距離を表示用の文字列にする（1km未満はm表記）
+const formatDistance = (km: number): string => (km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`);
 
 // 市区町村名→読み仮名（総務省 全国地方公共団体コードのカナ表記）。
 // 市区町村フィルタを五十音順に並べるために使う（漢字の文字コード順だとバラバラになるため）
@@ -231,7 +252,28 @@ const App = () => {
   const [filterPrefecture, setFilterPrefecture] = useState('すべて');
   const [filterMunicipality, setFilterMunicipality] = useState('すべて');
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
+
+  // 現在地を取得して地図を移動し、以降は検索結果を現在地からの距離順に並べる
+  const findNearby = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus('error');
+      return;
+    }
+    setLocationStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setMapConfig({ center: [loc.lat, loc.lng], zoom: 15 });
+        setLocationStatus('idle');
+      },
+      () => setLocationStatus('error'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // カード選択時に対応するピンの吹き出しを開く
   useEffect(() => {
@@ -251,6 +293,8 @@ const App = () => {
     setFilterPrefecture('すべて');
     setFilterMunicipality('すべて');
     setSelectedLocationId(null);
+    setUserLocation(null);
+    setLocationStatus('idle');
   };
 
 
@@ -264,15 +308,7 @@ const App = () => {
   const NO_FACILITY_RADIUS_KM = 2.0; // 2km以内に施設がなければ「周りにない」
   // regionごとに近隣施設があるか判定
   function hasNearbyFacility(region: any, locations: any[], radiusKm: number) {
-    return locations.some(loc => {
-      const R = 6371; // 地球半径km
-      const dLat = (loc.lat - region.lat) * Math.PI / 180;
-      const dLng = (loc.lng - region.lng) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(region.lat * Math.PI / 180) * Math.cos(loc.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const dist = R * c;
-      return dist < radiusKm;
-    });
+    return locations.some(loc => distanceKm(region.lat, region.lng, loc.lat, loc.lng) < radiusKm);
   }
 
   const highNeedSpecialRegions = regionStatsRaw.filter(region =>
@@ -288,7 +324,7 @@ const App = () => {
     })
     .filter(region => (filterCity === 'すべて' || region.name.includes(filterCity)) && (filterNeed === 'すべて' || region.need === filterNeed));
 
-  const filteredLocations = locations.filter(loc => {
+  let filteredLocations = locations.filter(loc => {
     const typeMatch = placeTypes.length === 0 || placeTypes.some(pt => loc.type === pt || loc.name.includes(pt) || loc.needs.some((need: string) => need.includes(pt)));
     const equipmentMatch = equipment === 'すべて' || loc.needs.some((need: string) => need.includes(equipment));
     const keywordMatch = searchKeyword === '' || loc.needs.some((need: string) => need.toLowerCase().includes(searchKeyword.toLowerCase())) || loc.name.toLowerCase().includes(searchKeyword.toLowerCase()) || loc.address.toLowerCase().includes(searchKeyword.toLowerCase());
@@ -296,6 +332,13 @@ const App = () => {
     const municipalityMatch = filterMunicipality === 'すべて' || loc.municipality === filterMunicipality;
     return typeMatch && equipmentMatch && keywordMatch && prefectureMatch && municipalityMatch;
   });
+
+  // 現在地が分かっていれば、距離を付与して近い順に並べる
+  if (userLocation) {
+    filteredLocations = filteredLocations
+      .map(loc => ({ ...loc, distanceKm: distanceKm(userLocation.lat, userLocation.lng, loc.lat, loc.lng) }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }
 
   // 都道府県・市区町村の絞り込み選択肢は実際に読み込んだ地点データから動的に作る
   const prefectureOptions = Array.from(new Set(locations.map(loc => loc.prefecture).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ja'));
@@ -524,6 +567,17 @@ const App = () => {
             ) : (
               <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
+                  <button
+                    onClick={userLocation ? () => { setUserLocation(null); setLocationStatus('idle'); } : findNearby}
+                    style={{ width: '100%', border: userLocation ? '1px solid #1976d2' : 'none', borderRadius: '12px', padding: '10px 0', background: userLocation ? '#e3eaf7' : '#1976d2', color: userLocation ? '#1976d2' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    {locationStatus === 'loading' ? '現在地を取得中…' : userLocation ? '📍 現在地からの距離順で表示中（解除）' : '📍 現在地から探す'}
+                  </button>
+                  {locationStatus === 'error' && (
+                    <div style={{ fontSize: '0.72rem', color: '#e74c3c', marginTop: '6px' }}>現在地を取得できませんでした。ブラウザの位置情報の許可設定をご確認ください。</div>
+                  )}
+                </div>
+                <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>キーワード検索</label>
                   <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="支援内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
                 </div>
@@ -578,7 +632,12 @@ const App = () => {
                         setSelectedLocationId(loc.id);
                       }
                     }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#f8fbff', border: '1px solid #e3eaf7', cursor: 'pointer' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>{loc.name}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
+                        <span>{loc.name}</span>
+                        {typeof loc.distanceKm === 'number' && (
+                          <span style={{ fontSize: '0.75rem', color: '#1976d2', background: '#e3eaf7', borderRadius: '8px', padding: '2px 8px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>{formatDistance(loc.distanceKm)}</span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{loc.address}</div>
                       <div style={{ fontSize: '0.82rem', color: '#555' }}>支援内容: {loc.needs.join(', ')}</div>
                     </div>
@@ -625,6 +684,11 @@ const App = () => {
                   </Marker>
                 ))}
               </MarkerClusterGroup>
+              {userLocation && (
+                <Marker position={[userLocation.lat, userLocation.lng]} icon={UserLocationIcon}>
+                  <Popup>現在地</Popup>
+                </Marker>
+              )}
             </MapContainer>
           </div>
 
