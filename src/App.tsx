@@ -635,11 +635,11 @@ const App = () => {
               <ChangeView center={mapConfig.center} zoom={mapConfig.zoom} />
               <MapResizeFixer />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              {showNeeds && regionStats.map(region => (
-                <Circle 
-                  key={region.id} 
-                  center={[region.lat, region.lng]} 
-                  radius={1500}
+              {showNeeds && regionStats.filter(region => region.need !== '低').map(region => (
+                <Circle
+                  key={region.id}
+                  center={[region.lat, region.lng]}
+                  radius={2500}
                   pathOptions={{ fillColor: region.need === '高' ? '#e74c3c' : '#f39c12', color: 'transparent', fillOpacity: 0.25 }}
                 />
               ))}
