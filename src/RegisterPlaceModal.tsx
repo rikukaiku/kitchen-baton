@@ -8,6 +8,30 @@ const TOOL_OPTIONS = ['鍋・フライパン', '食器・カトラリー', 'テ�
 
 export const REGISTERED_PLACES_STORAGE_KEY = 'kitchenbaton_registered_places';
 
+// Googleフォーム側の準備ができ次第、以下2つを実際の値に差し替える。
+// フォームの回答画面右上「⋮」→「事前入力リンクを取得」で、各質問にダミー値を入れて生成される
+// URLの ...formResponse?entry.123456789=... という部分から entry.ID を控える。
+// URLは通常のフォームURL（/viewform）の末尾を /formResponse に変えたもの。
+const GOOGLE_FORM_ACTION_URL = '';
+const GOOGLE_FORM_ENTRY_IDS: Record<string, string> = {
+  placeType: '',
+  days: '',
+  startTime: '',
+  endTime: '',
+  timeNote: '',
+  size: '',
+  areaNote: '',
+  equipment: '',
+  tools: '',
+  name: '',
+  company: '',
+  email: '',
+  phone: '',
+  canStore: '',
+  preferredBorrower: '',
+  messageToShokudo: '',
+};
+
 const cardStyle: React.CSSProperties = { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)' };
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.85rem', color: '#333', fontWeight: 700, marginBottom: '10px' };
 const subLabelStyle: React.CSSProperties = { fontSize: '0.75rem', color: '#777', marginBottom: '6px' };
@@ -44,19 +68,26 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
   const [canStore, setCanStore] = useState<boolean | null>(null);
   const [preferredBorrower, setPreferredBorrower] = useState('');
   const [messageToShokudo, setMessageToShokudo] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
     setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!placeType || !name.trim() || !email.trim()) {
       setError('貸す場所の種類・名前・メールアドレスは必須です');
       return;
     }
+    if (!agreedToTerms) {
+      setError('利用規約への同意が必要です');
+      return;
+    }
     setError('');
+    setSubmitting(true);
     const record = {
       id: `place-${Date.now()}`,
       registeredAt: new Date().toISOString(),
@@ -72,6 +103,32 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
     } catch {
       // localStorageが使えない環境ではデータは保存されないが、フォーム自体は完了扱いにする
     }
+    if (GOOGLE_FORM_ACTION_URL) {
+      const formData = new FormData();
+      formData.append(GOOGLE_FORM_ENTRY_IDS.placeType, placeType);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.days, days.join('、'));
+      formData.append(GOOGLE_FORM_ENTRY_IDS.startTime, startTime);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.endTime, endTime);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.timeNote, timeNote);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.size, size);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.areaNote, areaNote);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.equipment, equipment.join('、'));
+      formData.append(GOOGLE_FORM_ENTRY_IDS.tools, tools.join('、'));
+      formData.append(GOOGLE_FORM_ENTRY_IDS.name, name);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.company, company);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.email, email);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.phone, phone);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.canStore, canStore === true ? '置いておける' : canStore === false ? '難しい' : '');
+      formData.append(GOOGLE_FORM_ENTRY_IDS.preferredBorrower, preferredBorrower);
+      formData.append(GOOGLE_FORM_ENTRY_IDS.messageToShokudo, messageToShokudo);
+      try {
+        // Googleフォームはno-cors制約でレスポンス内容を読めないため、送信できたかは検証できない
+        await fetch(GOOGLE_FORM_ACTION_URL, { method: 'POST', mode: 'no-cors', body: formData });
+      } catch {
+        // ネットワークエラー時もローカル保存は残っているため完了扱いにする
+      }
+    }
+    setSubmitting(false);
     setDone(true);
   };
 
@@ -89,7 +146,7 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
         {done ? (
           <div style={{ padding: '32px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '1rem', fontWeight: 700, color: '#333', marginBottom: '8px' }}>登録ありがとうございます！</div>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '20px' }}>内容はこの端末に保存されました（試作版のため、まだ他の人には公開されません）</div>
+            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '20px' }}>{GOOGLE_FORM_ACTION_URL ? '内容を運営チームに送信しました' : '内容はこの端末に保存されました（試作版のため、まだ運営には送信されません）'}</div>
             <button onClick={onClose} style={{ border: 'none', borderRadius: '24px', padding: '10px 24px', background: '#1976d2', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>閉じる</button>
           </div>
         ) : (
@@ -198,9 +255,16 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
               <textarea value={messageToShokudo} onChange={(e) => setMessageToShokudo(e.target.value)} placeholder="子ども食堂を運営されているみなさまへメッセージをどうぞ" style={{ ...textareaStyle, height: '88px' }} />
             </div>
 
+            <div style={cardStyle}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: '#555', cursor: 'pointer' }}>
+                <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} style={{ marginTop: '2px' }} />
+                <span>入力内容を「キッチンバトン」上での場所紹介・子ども食堂運営者とのマッチングに利用することに同意します</span>
+              </label>
+            </div>
+
             {error && <div style={{ color: '#e74c3c', fontSize: '0.8rem', textAlign: 'center' }}>{error}</div>}
 
-            <button onClick={handleSubmit} style={{ marginTop: '4px', width: '100%', border: 'none', borderRadius: '24px', padding: '14px 0', background: '#1976d2', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>登録する</button>
+            <button onClick={handleSubmit} disabled={submitting} style={{ marginTop: '4px', width: '100%', border: 'none', borderRadius: '24px', padding: '14px 0', background: '#1976d2', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1, boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{submitting ? '送信中...' : '登録する'}</button>
           </div>
         )}
       </div>
