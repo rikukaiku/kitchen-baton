@@ -1,73 +1,88 @@
-# React + TypeScript + Vite
+#  キッチンバトン (kitchen-baton)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+子ども食堂を「始めたい人」と、公民館・空き家・飲食店（営業時間外）・社員食堂・キッチンカーなど「場所を提供したい人」をつなぐマッチングアプリです。「キッチン（調理場所）のバトンを地域でつなぐ」というコンセプトで開発しています。
 
-Currently, two official plugins are available:
+🔗 デモ: https://kitchen-baton.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## できること
 
-## React Compiler
+- **子ども食堂・公共施設マップ**：東京都の子ども食堂（798件）と、公民館・区民館・地区センター等の公共施設（627件）を地図上にクラスタ表示
+- **ニーズアラート**：地域ごとの子どもの人口と既存の子ども食堂数から「ニーズ高・中・低」を算出し、特に子ども食堂が近隣にない高ニーズ地域を警告表示
+- **場所を探す（検索・絞り込み）**：キーワード、都道府県／市区町村、場所の種類（子ども食堂／フードパントリー／空き家活用／社員食堂／公民館）、設備で絞り込み検索
+- **埼玉県データの読み込み**：埼玉県の子ども食堂一覧CSVにも対応（`public/saitama.csv`）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 使用技術
 
-## Expanding the ESLint configuration
+- React 19 + TypeScript + Vite
+- [react-leaflet](https://react-leaflet.js.org/) / Leaflet（地図表示）、`react-leaflet-cluster`（マーカークラスタリング）
+- MUI（`@mui/material`）
+- PapaParse（CSV読み込み）
+- データタイル：OpenStreetMap
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## セットアップ
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+その他のコマンド：
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build    # 本番ビルド
+npm run preview  # ビルド結果のプレビュー
+npm run lint     # ESLint実行
 ```
+
+## データについて
+
+### データソース
+
+地図データは東京都・自治体のオープンデータカタログおよび東京都福祉局「子供食堂推進事業」のデータを統合したものです。すべて **CC BY 4.0**（クリエイティブ・コモンズ 表示）ライセンスで、自治体別の取得元URLは [`data/SOURCES.md`](./data/SOURCES.md) にまとめています。
+
+| データ | 件数 | 保存先 |
+|---|---|---|
+| 東京都 子ども食堂一覧 | 798件 | `public/data/tokyo_kodomoshokudo.geojson` |
+| 公民館・区民館・地区センター等の公共施設 | 627件 | `public/data/koumin_facilities.geojson` |
+| 埼玉県 子ども食堂一覧 | - | `public/saitama.csv` |
+
+### データ変換スクリプト
+
+自治体から配布されるExcel/CSVを取り込むための補助スクリプトです。
+
+- `convert_excel.py`：こども食堂一覧のExcelを `public/saitama.csv` に変換
+- `convert_excel_to_json.py`：名称・住所・緯度・経度の列を自動検出し、Excelを `public/saitama_kodomo_shokudo.json` に変換
+- `school_geocode.js`：小学校名リストをNominatim APIでジオコーディングし `regionData.json` を生成
+
+```bash
+python convert_excel.py "こども食堂一覧.xlsx"
+python convert_excel_to_json.py
+node school_geocode.js
+```
+
+## ディレクトリ構成
+
+```
+├── src/
+│   ├── main.tsx        # エントリーポイント
+│   └── App.tsx          # 地図・検索・ニーズアラートを含むメインUI
+├── public/
+│   ├── data/             # 子ども食堂・公共施設のGeoJSON
+│   └── saitama.csv       # 埼玉県子ども食堂データ
+├── data/
+│   └── SOURCES.md        # データ出典一覧
+├── convert_excel.py
+├── convert_excel_to_json.py
+└── school_geocode.js
+```
+
+## 今後の展望
+
+- 空白地域（需給ギャップ）分析の高度化：メッシュ単位での人口×距離ペナルティによる可視化
+- 施設登録フォーム（設備情報・営業許可・空き時間帯の登録）の実装
+- 行政の補助金・助成金情報データベースの追加
+- 対象自治体の拡大（他都道府県のオープンデータ取り込み）
+
+## コントリビュート
+
+Issue・Pull Requestを歓迎します。データの追加や地域拡張についてもお気軽にご連絡ください。
