@@ -8,29 +8,32 @@ const TOOL_OPTIONS = ['鍋・フライパン', '食器・カトラリー', 'テ�
 
 export const REGISTERED_PLACES_STORAGE_KEY = 'kitchenbaton_registered_places';
 
-// Googleフォーム側の準備ができ次第、以下2つを実際の値に差し替える。
+// Googleフォーム側の準備ができ次第、以下2つと GOOGLE_FORM_READY を実際の値に差し替える。
 // フォームの回答画面右上「⋮」→「事前入力リンクを取得」で、各質問にダミー値を入れて生成される
 // URLの ...formResponse?entry.123456789=... という部分から entry.ID を控える。
 // URLは通常のフォームURL（/viewform）の末尾を /formResponse に変えたもの。
-const GOOGLE_FORM_ACTION_URL = '';
+const GOOGLE_FORM_ACTION_URL = 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/formResponse';
 const GOOGLE_FORM_ENTRY_IDS: Record<string, string> = {
-  placeType: '',
-  days: '',
-  startTime: '',
-  endTime: '',
-  timeNote: '',
-  size: '',
-  areaNote: '',
-  equipment: '',
-  tools: '',
-  name: '',
-  company: '',
-  email: '',
-  phone: '',
-  canStore: '',
-  preferredBorrower: '',
-  messageToShokudo: '',
+  placeType: 'entry.1000000001',
+  days: 'entry.1000000002',
+  startTime: 'entry.1000000003',
+  endTime: 'entry.1000000004',
+  timeNote: 'entry.1000000005',
+  size: 'entry.1000000006',
+  areaNote: 'entry.1000000007',
+  equipment: 'entry.1000000008',
+  tools: 'entry.1000000009',
+  name: 'entry.1000000010',
+  company: 'entry.1000000011',
+  email: 'entry.1000000012',
+  phone: 'entry.1000000013',
+  canStore: 'entry.1000000014',
+  preferredBorrower: 'entry.1000000015',
+  messageToShokudo: 'entry.1000000016',
 };
+// 上記が実際のGoogleフォームの値に差し替わるまではfalseのままにする。
+// falseの間はGoogleフォームへの送信自体を行わず、ローカル保存のみで完了する。
+const GOOGLE_FORM_READY = false;
 
 const cardStyle: React.CSSProperties = { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)' };
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.85rem', color: '#333', fontWeight: 700, marginBottom: '10px' };
@@ -103,7 +106,7 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
     } catch {
       // localStorageが使えない環境ではデータは保存されないが、フォーム自体は完了扱いにする
     }
-    if (GOOGLE_FORM_ACTION_URL) {
+    if (GOOGLE_FORM_READY) {
       const formData = new FormData();
       formData.append(GOOGLE_FORM_ENTRY_IDS.placeType, placeType);
       formData.append(GOOGLE_FORM_ENTRY_IDS.days, days.join('、'));
@@ -146,7 +149,7 @@ export default function RegisterPlaceModal({ onClose }: { onClose: () => void })
         {done ? (
           <div style={{ padding: '32px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '1rem', fontWeight: 700, color: '#333', marginBottom: '8px' }}>登録ありがとうございます！</div>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '20px' }}>{GOOGLE_FORM_ACTION_URL ? '内容を運営チームに送信しました' : '内容はこの端末に保存されました（試作版のため、まだ運営には送信されません）'}</div>
+            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '20px' }}>{GOOGLE_FORM_READY ? '内容を運営チームに送信しました' : '内容はこの端末に保存されました（試作版のため、まだ運営には送信されません）'}</div>
             <button onClick={onClose} style={{ border: 'none', borderRadius: '24px', padding: '10px 24px', background: '#1976d2', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>閉じる</button>
           </div>
         ) : (
