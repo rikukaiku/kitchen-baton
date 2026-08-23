@@ -21,8 +21,28 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// 場所の種類ごとの色（地図ピンと検索フィルタのチェックボックスで共通利用）
+const TYPE_COLORS: Record<string, string> = {
+  'こども食堂': '#dd8a4e',
+  '公民館': '#43a047',
+  'フードパントリー': '#e53935',
+  '空き家活用': '#8e44ad',
+  '社員食堂': '#1e88e5',
+};
+
+// 場所の種類ごとの絵柄（viewBox 0 0 24 24のSVG中身）。
+// 絵文字は環境によってフォントが無く表示されないことがあるため、常に同じ見た目になる図形で自作している。
+const TYPE_GLYPHS: Record<string, string> = {
+  'こども食堂': '<polygon points="12,3 21,18 3,18" fill="#dd8a4e"/><rect x="5.5" y="12.5" width="13" height="3" fill="#7a4a1e"/>',
+  '公民館': '<polygon points="12,3 22,11 2,11" fill="#43a047"/><rect x="4.5" y="11" width="15" height="10" fill="#43a047"/><rect x="7" y="14" width="2.2" height="7" fill="#fff"/><rect x="10.9" y="14" width="2.2" height="7" fill="#fff"/><rect x="14.8" y="14" width="2.2" height="7" fill="#fff"/>',
+  'フードパントリー': '<rect x="3" y="8" width="18" height="13" rx="1.5" fill="#e53935"/><rect x="3" y="8" width="18" height="4" fill="#b71c1c"/>',
+  '空き家活用': '<polygon points="12,3 22,12 2,12" fill="#8e44ad"/><rect x="5" y="12" width="14" height="9" fill="#8e44ad"/><rect x="10" y="15" width="4" height="6" fill="#fff"/>',
+  '社員食堂': '<rect x="7" y="3" width="10" height="18" fill="#1e88e5"/><rect x="9" y="6" width="2" height="2" fill="#fff"/><rect x="13" y="6" width="2" height="2" fill="#fff"/><rect x="9" y="10" width="2" height="2" fill="#fff"/><rect x="13" y="10" width="2" height="2" fill="#fff"/><rect x="9" y="14" width="2" height="2" fill="#fff"/><rect x="13" y="14" width="2" height="2" fill="#fff"/>',
+};
+const USER_LOCATION_GLYPH = '<circle cx="12" cy="12" r="7" fill="#757575"/><circle cx="12" cy="12" r="3" fill="#fff"/>';
+
 // 場所の種類ごとに、その場所を連想させる絵柄入りのピンを作る
-const makeEmojiPinIcon = (color: string, emoji: string): L.DivIcon => L.divIcon({
+const makePinIcon = (color: string, glyphSvg: string): L.DivIcon => L.divIcon({
   className: 'kb-pin-icon',
   html: `
     <div style="position:relative; width:30px; height:40px;">
@@ -30,7 +50,7 @@ const makeEmojiPinIcon = (color: string, emoji: string): L.DivIcon => L.divIcon(
         <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 25 15 25s15-14.5 15-25C30 6.716 23.284 0 15 0z" fill="${color}"/>
         <circle cx="15" cy="15" r="10.5" fill="#fff"/>
       </svg>
-      <div style="position:absolute; top:2px; left:0; width:30px; height:22px; display:flex; align-items:center; justify-content:center; font-size:15px; line-height:1;">${emoji}</div>
+      <svg width="19" height="19" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:5.5px; left:5.5px;">${glyphSvg}</svg>
     </div>
   `,
   iconSize: [30, 40],
@@ -39,16 +59,12 @@ const makeEmojiPinIcon = (color: string, emoji: string): L.DivIcon => L.divIcon(
 });
 
 // 現在地マーカーはグレーの目印ピンで区別する（種類ごとの色と被らないように）
-const UserLocationIcon = makeEmojiPinIcon('#757575', '📍');
+const UserLocationIcon = makePinIcon('#757575', USER_LOCATION_GLYPH);
 
 // 場所の種類ごとに、ひと目でわかる絵柄でピンを分ける
-const TYPE_ICONS: Record<string, L.DivIcon> = {
-  'こども食堂': makeEmojiPinIcon('#dd8a4e', '🍙'),
-  '公民館': makeEmojiPinIcon('#43a047', '🏛️'),
-  'フードパントリー': makeEmojiPinIcon('#e53935', '🥫'),
-  '空き家活用': makeEmojiPinIcon('#8e44ad', '🏠'),
-  '社員食堂': makeEmojiPinIcon('#1e88e5', '🏢'),
-};
+const TYPE_ICONS: Record<string, L.DivIcon> = Object.fromEntries(
+  Object.keys(TYPE_COLORS).map(t => [t, makePinIcon(TYPE_COLORS[t], TYPE_GLYPHS[t])])
+);
 
 // 地図の視点を切り替える補助コンポーネント
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
@@ -583,6 +599,7 @@ const App = () => {
                             onChange={() => setPlaceTypes(prev => checked ? prev.filter(x => x !== t) : [...prev, t])}
                             style={{ margin: 0 }}
                           />
+                          <svg width="15" height="15" viewBox="0 0 24 24" style={{ flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: TYPE_GLYPHS[t] }} />
                           {t}
                         </label>
                       );
