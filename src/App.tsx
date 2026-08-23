@@ -34,9 +34,9 @@ const KouminIcon = makeColorIcon('green');
 // 現在地マーカーはグレーで区別する（種類ごとの色と被らないように）
 const UserLocationIcon = makeColorIcon('grey');
 
-// 場所の種類ごとにピンの色を変える（ブランドカラーのオレンジ系＝子ども食堂を主役に）
+// 場所の種類ごとにピンの色を変える（ブランドカラーのオレンジ系＝こども食堂を主役に）
 const TYPE_ICONS: Record<string, L.Icon> = {
-  '子ども食堂': makeColorIcon('orange'),
+  'こども食堂': makeColorIcon('orange'),
   '公民館': KouminIcon,
   'フードパントリー': makeColorIcon('red'),
   '空き家活用': makeColorIcon('violet'),
@@ -211,7 +211,7 @@ const sortByKana = (a: string, b: string): number => {
   return kanaA.localeCompare(kanaB, 'ja');
 };
 
-// ダミーの子ども食堂データ（CSVがない場合のフォールバック）
+// ダミーのこども食堂データ（CSVがない場合のフォールバック）
 const dummyLocations = [
   { id: 1, name: "子ども交流食堂たまっこ", lat: 35.735, lng: 139.665, address: "豊玉中3-3-12", needs: ["学習支援", "食事提供"] },
   { id: 2, name: "子ども食堂 ひまわり", lat: 35.676, lng: 139.676, address: "幡ヶ谷2-10-5", needs: ["食事提供"] },
@@ -284,7 +284,7 @@ const App = () => {
 
   const regionStatsRaw = regionData;
 
-  // 不足度「高」かつ人口が多く、かつ食堂が1件もない区市町村を特に支援が必要な地域として抽出
+  // 不足度「高」かつ人口が多く、かつ食堂が1件もない区市町村を特に活動が求められる地域として抽出
   const HIGH_NEED_POP_THRESHOLD = 10000; // 人口多い基準
   const highNeedSpecialRegions = regionStatsRaw.filter(region =>
     region.need === '高' &&
@@ -330,7 +330,7 @@ const App = () => {
     )
   ).sort(sortByKana);
 
-  // 埼玉県CSV・東京都子ども食堂GeoJSON・東京都公民館等GeoJSONの読み込み（すべて統合してlocationsに反映）
+  // 埼玉県CSV・東京都こども食堂GeoJSON・東京都公民館等GeoJSONの読み込み（すべて統合してlocationsに反映）
   useEffect(() => {
     let saitamaData: any[] = [];
     let tokyoData: any[] = [];
@@ -360,7 +360,7 @@ const App = () => {
             address: f.properties?.address || "",
             prefecture: "東京都",
             municipality: f.properties?.municipality || "",
-            type: '子ども食堂',
+            type: 'こども食堂',
             needs: f.properties?.needs || []
           }))
           .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
@@ -449,7 +449,7 @@ const App = () => {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
-          <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>子ども食堂・支援拠点の可視化マップ</div>
+          <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>こども食堂・活動拠点の可視化マップ</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
@@ -495,12 +495,12 @@ const App = () => {
                   {/* 特別警告エリア */}
                   {highNeedSpecialRegions.length > 0 && (
                     <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
-                      <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に支援が望まれている地域</div>
+                      <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に活動が望まれている地域</div>
                       {highNeedSpecialRegions.map(region => (
                         <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #f0dcbc', cursor: 'pointer', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>不足度 高</span>
-                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[子ども食堂が近隣にありません]</span>
+                          <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[こども食堂が近隣にありません]</span>
                           <div style={{ fontSize: '0.8rem', color: '#b94a48', marginTop: '2px' }}>人口: {region.children.toLocaleString()}人</div>
                         </div>
                       ))}
@@ -509,7 +509,7 @@ const App = () => {
                   {/* 通常リスト */}
                   {regionStats.map(region => {
                     const message = region.facilities === 0
-                      ? '子ども食堂が1件もありません'
+                      ? 'こども食堂が1件もありません'
                       : region.need === '高' ? '子どもの人口に対して食堂が求められている地域'
                       : region.need === '中' ? '食堂がやや求められている地域'
                       : '子どもの人口に対して食堂は充足傾向';
@@ -526,7 +526,7 @@ const App = () => {
                         </div>
                         <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{message}</div>
                         <div style={{ fontSize: '0.82rem', color: '#555' }}>対象児童数: {region.children.toLocaleString()}人</div>
-                        <div style={{ fontSize: '0.82rem', color: '#555' }}>子ども食堂数: {region.facilities} 箇所</div>
+                        <div style={{ fontSize: '0.82rem', color: '#555' }}>こども食堂数: {region.facilities} 箇所</div>
                       </div>
                     );
                   })}
@@ -547,7 +547,7 @@ const App = () => {
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>キーワード検索</label>
-                  <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="支援内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
+                  <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="活動内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>都道府県</label>
@@ -566,7 +566,7 @@ const App = () => {
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>場所の種類（複数選択可）</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {['子ども食堂', 'フードパントリー', '空き家活用', '社員食堂', '公民館'].map(t => {
+                    {['こども食堂', 'フードパントリー', '空き家活用', '社員食堂', '公民館'].map(t => {
                       const checked = placeTypes.includes(t);
                       return (
                         <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '999px', border: checked ? '1px solid #dd8a4e' : '1px solid #e8c193', background: checked ? '#fbe6d3' : '#fff', color: checked ? '#c15a2c' : '#a97a4f', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
@@ -607,7 +607,7 @@ const App = () => {
                         )}
                       </div>
                       <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{loc.address}</div>
-                      <div style={{ fontSize: '0.82rem', color: '#555' }}>支援内容: {loc.needs.join(', ')}</div>
+                      <div style={{ fontSize: '0.82rem', color: '#555' }}>活動内容: {loc.needs.join(', ')}</div>
                     </div>
                   ))}
                 </div>
@@ -665,7 +665,7 @@ const App = () => {
       </div>
 
       <footer style={{ padding: '10px 24px', fontSize: '0.72rem', color: '#8a94a6', textAlign: 'center' }}>
-        子ども食堂データ出典：東京都オープンデータカタログ（区市町村各データセット）／東京都福祉局「子供食堂推進事業」（いずれも
+        こども食堂データ出典：東京都オープンデータカタログ（区市町村各データセット）／東京都福祉局「子供食堂推進事業」（いずれも
         <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noreferrer" style={{ color: '#8a94a6' }}> CC BY 4.0</a>
         ）。詳細は <code>data/SOURCES.md</code> を参照。
       </footer>

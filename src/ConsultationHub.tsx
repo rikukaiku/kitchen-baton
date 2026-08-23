@@ -62,7 +62,7 @@ const SEED_CONSULTATIONS: Consultation[] = [
     anonymous: false,
     createdAt: '2026-08-18T00:00:00.000Z',
     answers: [
-      { id: 'seed-1-a1', name: '佐藤 健一', credential: 'みどり子ども食堂 運営5年', body: 'うちは企業の総務部に直接電話して、社会貢献活動の一環として説明したらすぐ話が進みました。CSR担当がいる企業だと特に通りやすいと思います。', createdAt: '2026-08-19T00:00:00.000Z', helpful: 12 },
+      { id: 'seed-1-a1', name: '佐藤 健一', credential: 'みどりこども食堂 運営5年', body: 'うちは企業の総務部に直接電話して、社会貢献活動の一環として説明したらすぐ話が進みました。CSR担当がいる企業だと特に通りやすいと思います。', createdAt: '2026-08-19T00:00:00.000Z', helpful: 12 },
       { id: 'seed-1-a2', name: '田中 美咲', credential: 'NPO法人こそだてひろば 理事', body: '自治体の子育て支援課経由で企業を紹介してもらえることもあります。一度窓口に相談してみるのもおすすめです。', createdAt: '2026-08-19T00:00:00.000Z', helpful: 7 },
     ],
   },
@@ -70,7 +70,7 @@ const SEED_CONSULTATIONS: Consultation[] = [
     id: 'seed-2',
     title: '食品衛生責任者の資格が必要か知りたいです',
     categories: ['衛生・許可'],
-    body: '子ども食堂を始めるにあたって、食品衛生責任者の資格が必須なのか、任意なのか知りたいです。',
+    body: 'こども食堂を始めるにあたって、食品衛生責任者の資格が必須なのか、任意なのか知りたいです。',
     area: '練馬区',
     posterName: '匿名希望',
     anonymous: true,
@@ -471,7 +471,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
                 <div style={{ fontSize: '0.72rem', color: '#777', marginBottom: '4px' }}>名前</div>
                 <input type="text" value={answerName} onChange={(e) => setAnswerName(e.target.value)} placeholder="山田 太郎" style={{ ...inputStyle, marginBottom: '12px' }} />
                 <div style={{ fontSize: '0.72rem', color: '#777', marginBottom: '4px' }}>肩書き・運営歴</div>
-                <input type="text" value={answerCredential} onChange={(e) => setAnswerCredential(e.target.value)} placeholder="例：○○子ども食堂 運営5年" style={{ ...inputStyle, marginBottom: '12px' }} />
+                <input type="text" value={answerCredential} onChange={(e) => setAnswerCredential(e.target.value)} placeholder="例：○○こども食堂 運営5年" style={{ ...inputStyle, marginBottom: '12px' }} />
                 <div style={{ fontSize: '0.72rem', color: '#777', marginBottom: '4px' }}>回答本文</div>
                 <textarea value={answerBody} onChange={(e) => setAnswerBody(e.target.value)} placeholder="経験を踏まえてアドバイスをお願いします" style={{ ...textareaStyle, height: '60px', marginBottom: '14px' }} />
                 {answerError && <div style={{ color: '#e74c3c', fontSize: '0.8rem', textAlign: 'center', marginBottom: '10px' }}>{answerError}</div>}

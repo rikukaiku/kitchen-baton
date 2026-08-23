@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'キッチン・バトン',
         short_name: 'キッチンバトン',
-        description: '子ども食堂・支援拠点の可視化アプリ',
+        description: 'こども食堂・活動拠点の可視化アプリ',
         start_url: '/',
         display: 'standalone',
         background_color: '#fdf6ec',
