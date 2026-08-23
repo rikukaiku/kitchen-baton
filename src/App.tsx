@@ -21,26 +21,33 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const makeColorIcon = (color: string) => L.icon({
-  iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+// 場所の種類ごとに、その場所を連想させる絵柄入りのピンを作る
+const makeEmojiPinIcon = (color: string, emoji: string): L.DivIcon => L.divIcon({
+  className: 'kb-pin-icon',
+  html: `
+    <div style="position:relative; width:30px; height:40px;">
+      <svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:0; left:0;">
+        <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 25 15 25s15-14.5 15-25C30 6.716 23.284 0 15 0z" fill="${color}"/>
+        <circle cx="15" cy="15" r="10.5" fill="#fff"/>
+      </svg>
+      <div style="position:absolute; top:2px; left:0; width:30px; height:22px; display:flex; align-items:center; justify-content:center; font-size:15px; line-height:1;">${emoji}</div>
+    </div>
+  `,
+  iconSize: [30, 40],
+  iconAnchor: [15, 40],
+  popupAnchor: [0, -36],
 });
 
-// 公民館等（施設種別が「公民館」）は緑ピンで区別する
-const KouminIcon = makeColorIcon('green');
+// 現在地マーカーはグレーの目印ピンで区別する（種類ごとの色と被らないように）
+const UserLocationIcon = makeEmojiPinIcon('#757575', '📍');
 
-// 現在地マーカーはグレーで区別する（種類ごとの色と被らないように）
-const UserLocationIcon = makeColorIcon('grey');
-
-// 場所の種類ごとにピンの色を変える（ブランドカラーのオレンジ系＝こども食堂を主役に）
-const TYPE_ICONS: Record<string, L.Icon> = {
-  'こども食堂': makeColorIcon('orange'),
-  '公民館': KouminIcon,
-  'フードパントリー': makeColorIcon('red'),
-  '空き家活用': makeColorIcon('violet'),
-  '社員食堂': makeColorIcon('blue'),
+// 場所の種類ごとに、ひと目でわかる絵柄でピンを分ける
+const TYPE_ICONS: Record<string, L.DivIcon> = {
+  'こども食堂': makeEmojiPinIcon('#dd8a4e', '🍙'),
+  '公民館': makeEmojiPinIcon('#43a047', '🏛️'),
+  'フードパントリー': makeEmojiPinIcon('#e53935', '🥫'),
+  '空き家活用': makeEmojiPinIcon('#8e44ad', '🏠'),
+  '社員食堂': makeEmojiPinIcon('#1e88e5', '🏢'),
 };
 
 // 地図の視点を切り替える補助コンポーネント
