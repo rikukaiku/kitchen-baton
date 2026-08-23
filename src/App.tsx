@@ -345,37 +345,8 @@ const App = () => {
       setLocations(merged.length > 0 ? merged : dummyLocations);
     };
 
-    Papa.parse('/saitama.csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        saitamaData = results.data
-          .map((row: any, index: number) => {
-            const lat = parseFloat(row.緯度 ?? row['緯度']);
-            const lng = parseFloat(row.経度 ?? row['経 度'] ?? row['経度']);
-            return {
-              id: `saitama-${index}`,
-              name: row.名称 || row['名称'] || "名称不明",
-              lat,
-              lng,
-              address: row.住所 || row['住所'] || "",
-              prefecture: row.都道府県 || row['都道府県'] || "",
-              municipality: row.市区町村名 || row['市区町村名'] || "",
-              type: '子ども食堂',
-              needs: (row.実施支援の主な区分 ?? row['実施支援の主な区分'] ?? "").split(',').map((n: string) => n.trim()).filter(Boolean)
-            };
-          })
-          .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
-        saitamaDone = true;
-        commit();
-      },
-      error: (error) => {
-        console.error("埼玉CSV読み込みエラー:", error);
-        saitamaDone = true;
-        commit();
-      }
-    });
+    // 埼玉県データはライセンス・出典未確認のため、確認が取れるまで一時的に地図表示から除外する
+    saitamaDone = true;
 
     fetch('/data/tokyo_kodomoshokudo.geojson')
       .then((res) => res.json())
