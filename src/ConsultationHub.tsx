@@ -27,7 +27,6 @@ type Consultation = {
   area: string;
   posterName: string;
   anonymous: boolean;
-  email: string;
   createdAt: string;
   answers: Answer[];
 };
@@ -61,7 +60,6 @@ const SEED_CONSULTATIONS: Consultation[] = [
     area: '世田谷区',
     posterName: '山田 花子',
     anonymous: false,
-    email: '',
     createdAt: '2026-08-18T00:00:00.000Z',
     answers: [
       { id: 'seed-1-a1', name: '佐藤 健一', credential: 'みどり子ども食堂 運営5年', body: 'うちは企業の総務部に直接電話して、社会貢献活動の一環として説明したらすぐ話が進みました。CSR担当がいる企業だと特に通りやすいと思います。', createdAt: '2026-08-19T00:00:00.000Z', helpful: 12 },
@@ -76,7 +74,6 @@ const SEED_CONSULTATIONS: Consultation[] = [
     area: '練馬区',
     posterName: '匿名希望',
     anonymous: true,
-    email: '',
     createdAt: '2026-08-21T00:00:00.000Z',
     answers: [],
   },
@@ -137,6 +134,23 @@ function parseFaqCsv(csvText: string): FaqItem[] {
     });
 }
 
+// 相談文・回答文にメールアドレスや電話番号らしき文字列が含まれていたら伏せ字にする。
+// 連絡先はやり取りの起点が特定の個人に偏るのを避けるため、自由記述欄には残さない方針。
+function redactContactInfo(text: string): { text: string; redacted: boolean } {
+  const patterns = [
+    /[a-zA-Z0-9][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // メールアドレス
+    /0[\d０-９\-‐－ー\s]{7,14}\d/g, // 電話番号（0から始まる数字列、ハイフン・全角混在可）
+  ];
+  let result = text;
+  let redacted = false;
+  for (const pattern of patterns) {
+    const replaced = result.replace(pattern, '［連絡先は削除されました］');
+    if (replaced !== result) redacted = true;
+    result = replaced;
+  }
+  return { text: result, redacted };
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
@@ -174,6 +188,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [faqItems, setFaqItems] = useState<FaqItem[]>(FALLBACK_FAQ_ITEMS);
+  const [notice, setNotice] = useState('');
 
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<'すべて' | '未回答' | '回答あり'>('すべて');
@@ -217,7 +232,6 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
   const [postArea, setPostArea] = useState('');
   const [postName, setPostName] = useState('');
   const [postAnonymous, setPostAnonymous] = useState(false);
-  const [postEmail, setPostEmail] = useState('');
   const [postError, setPostError] = useState('');
 
   const togglePostCategory = (cat: string) => {
@@ -226,7 +240,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
 
   const resetPostForm = () => {
     setPostTitle(''); setPostCategories([]); setPostBody(''); setPostArea('');
-    setPostName(''); setPostAnonymous(false); setPostEmail(''); setPostError('');
+    setPostName(''); setPostAnonymous(false); setPostError('');
   };
 
   const submitConsultation = () => {
@@ -234,15 +248,19 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
       setPostError('タイトル・カテゴリ・詳細は必須です');
       return;
     }
+    const titleResult = redactContactInfo(postTitle.trim());
+    const bodyResult = redactContactInfo(postBody.trim());
+    if (titleResult.redacted || bodyResult.redacted) {
+      setNotice('入力内容に含まれていた連絡先とみられる文字列を削除しました');
+    }
     const record: Consultation = {
       id: `c-${Date.now()}`,
-      title: postTitle.trim(),
+      title: titleResult.text,
       categories: postCategories,
-      body: postBody.trim(),
+      body: bodyResult.text,
       area: postArea.trim(),
       posterName: postAnonymous ? '匿名希望' : (postName.trim() || '匿名希望'),
       anonymous: postAnonymous,
-      email: postEmail.trim(),
       createdAt: new Date().toISOString(),
       answers: [],
     };
@@ -265,11 +283,15 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
       setAnswerError('名前・回答本文は必須です');
       return;
     }
+    const bodyResult = redactContactInfo(answerBody.trim());
+    if (bodyResult.redacted) {
+      setNotice('入力内容に含まれていた連絡先とみられる文字列を削除しました');
+    }
     const answer: Answer = {
       id: `a-${Date.now()}`,
       name: answerName.trim(),
       credential: answerCredential.trim(),
-      body: answerBody.trim(),
+      body: bodyResult.text,
       createdAt: new Date().toISOString(),
       helpful: 0,
     };
@@ -295,7 +317,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#dd8a4e', color: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {showBack && (
-              <span onClick={() => setView('list')} style={{ cursor: 'pointer', fontSize: '1.1rem' }}>←</span>
+              <span onClick={() => { setView('list'); setNotice(''); }} style={{ cursor: 'pointer', fontSize: '1.1rem' }}>←</span>
             )}
             <div>
               <div style={{ fontSize: '1.05rem', fontWeight: 'bold' }}>{headerTitle}</div>
@@ -307,10 +329,19 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
 
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '75vh', overflowY: 'auto' }}>
 
+          {notice && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', background: '#fff6e3', border: '1px solid #f0dcbc', borderRadius: '12px', padding: '10px 14px', fontSize: '0.78rem', color: '#8a5f3a' }}>
+              <span>{notice}</span>
+              <span onClick={() => setNotice('')} style={{ cursor: 'pointer', flexShrink: 0 }}>×</span>
+            </div>
+          )}
+
           {view === 'list' && (
             <>
               <button onClick={() => setView('post')} style={{ border: 'none', borderRadius: '24px', padding: '13px 0', width: '100%', background: '#dd8a4e', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>+ 相談を投稿する</button>
               <button onClick={() => setView('faq')} style={{ border: '1px solid #e8c193', borderRadius: '24px', padding: '11px 0', width: '100%', background: '#fff', color: '#8a5f3a', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>よくある質問（FAQ）を見る</button>
+
+              <div style={{ fontSize: '0.74rem', color: '#a97a4f', textAlign: 'center' }}>個人の連絡先（メール・電話番号など）は書かないでください。含まれていた場合は自動的に削除されます。</div>
 
               <div style={cardStyle}>
                 <div style={labelStyle}>カテゴリ</div>
@@ -376,7 +407,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
 
               <div style={cardStyle}>
                 <div style={labelStyle}>詳細</div>
-                <div style={subLabelStyle}>状況をできるだけ具体的に教えてください</div>
+                <div style={subLabelStyle}>状況をできるだけ具体的に教えてください（メールアドレス・電話番号などの連絡先は書かないでください。含まれていた場合は自動的に削除されます）</div>
                 <textarea value={postBody} onChange={(e) => setPostBody(e.target.value)} placeholder="状況を書いてください" style={{ ...textareaStyle, height: '80px' }} />
               </div>
 
@@ -393,12 +424,6 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
                   <span style={{ fontSize: '0.82rem', color: '#555' }}>匿名で投稿する</span>
                   <input type="checkbox" checked={postAnonymous} onChange={(e) => setPostAnonymous(e.target.checked)} />
                 </label>
-              </div>
-
-              <div style={cardStyle}>
-                <div style={labelStyle}>連絡先（任意）</div>
-                <div style={subLabelStyle}>回答があったときにお知らせします</div>
-                <input type="email" value={postEmail} onChange={(e) => setPostEmail(e.target.value)} placeholder="example@kitchen-baton.jp" style={inputStyle} />
               </div>
 
               {postError && <div style={{ color: '#e74c3c', fontSize: '0.8rem', textAlign: 'center' }}>{postError}</div>}
