@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
+import Papa from 'papaparse';
 
 const CATEGORIES = ['資金', '場所', '衛生・許可', 'ボランティア集め', '運営・継続', 'その他'];
 const STORAGE_KEY = 'kitchenbaton_consultations';
+
+// FAQはGoogleスプレッドシートで管理する（荒木さんがコード不要で編集できるように）。
+// シートを「ファイル→共有→ウェブに公開」でCSV形式にし、そのURLをここに設定する。
+// 列は「カテゴリ, Q, A」の3列。A列が空なら「回答準備中」として表示される。
+// A列内で改行すると、回答が箇条書きとして表示される。
+const FAQ_SHEET_CSV_URL = '';
 
 type Answer = {
   id: string;
@@ -31,7 +38,7 @@ type FaqItem = {
   answer: string[] | null;
 };
 
-const FAQ_ITEMS: FaqItem[] = [
+const FALLBACK_FAQ_ITEMS: FaqItem[] = [
   { category: '場所', question: '調理場所のある借りられる場所を探したい', answer: null },
   {
     category: 'ボランティア集め',
@@ -94,6 +101,42 @@ function saveConsultations(list: Consultation[]) {
   }
 }
 
+const ANSWERER_PROFILE_KEY = 'kitchenbaton_answerer_profile';
+
+function loadAnswererProfile(): { name: string; credential: string } {
+  try {
+    const raw = localStorage.getItem(ANSWERER_PROFILE_KEY);
+    if (!raw) return { name: '', credential: '' };
+    const parsed = JSON.parse(raw);
+    return { name: parsed.name || '', credential: parsed.credential || '' };
+  } catch {
+    return { name: '', credential: '' };
+  }
+}
+
+function saveAnswererProfile(name: string, credential: string) {
+  try {
+    localStorage.setItem(ANSWERER_PROFILE_KEY, JSON.stringify({ name, credential }));
+  } catch {
+    // 保存できなくても回答自体は続行できる
+  }
+}
+
+function parseFaqCsv(csvText: string): FaqItem[] {
+  const parsed = Papa.parse<Record<string, string>>(csvText, { header: true, skipEmptyLines: true });
+  return parsed.data
+    .filter(row => row['Q']?.trim())
+    .map(row => {
+      const answerRaw = (row['A'] || '').trim();
+      const answerLines = answerRaw.split('\n').map(l => l.trim()).filter(Boolean);
+      return {
+        category: (row['カテゴリ'] || 'その他').trim(),
+        question: row['Q'].trim(),
+        answer: answerLines.length > 0 ? answerLines : null,
+      };
+    });
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
@@ -130,6 +173,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<'list' | 'post' | 'detail' | 'faq'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [faqItems, setFaqItems] = useState<FaqItem[]>(FALLBACK_FAQ_ITEMS);
 
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<'すべて' | '未回答' | '回答あり'>('すべて');
@@ -137,6 +181,19 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
   const [keyword, setKeyword] = useState('');
 
   useEffect(() => { saveConsultations(consultations); }, [consultations]);
+
+  useEffect(() => {
+    if (!FAQ_SHEET_CSV_URL) return;
+    fetch(FAQ_SHEET_CSV_URL)
+      .then(res => res.text())
+      .then(csvText => {
+        const items = parseFaqCsv(csvText);
+        if (items.length > 0) setFaqItems(items);
+      })
+      .catch(() => {
+        // シートが未設定・取得失敗時はハードコードされたフォールバック内容を表示し続ける
+      });
+  }, []);
 
   const toggleFilterCategory = (cat: string) => {
     setFilterCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
@@ -195,9 +252,10 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
     setView('detail');
   };
 
-  // 回答フォームの状態
-  const [answerName, setAnswerName] = useState('');
-  const [answerCredential, setAnswerCredential] = useState('');
+  // 回答フォームの状態（名前・肩書きは端末に記憶し、連投時は自動入力する）
+  const [answererProfile] = useState(loadAnswererProfile);
+  const [answerName, setAnswerName] = useState(answererProfile.name);
+  const [answerCredential, setAnswerCredential] = useState(answererProfile.credential);
   const [answerBody, setAnswerBody] = useState('');
   const [answerError, setAnswerError] = useState('');
 
@@ -216,7 +274,8 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
       helpful: 0,
     };
     setConsultations(prev => prev.map(c => c.id === selected.id ? { ...c, answers: [...c.answers, answer] } : c));
-    setAnswerName(''); setAnswerCredential(''); setAnswerBody(''); setAnswerError('');
+    saveAnswererProfile(answerName.trim(), answerCredential.trim());
+    setAnswerBody(''); setAnswerError('');
   };
 
   const markHelpful = (answerId: string) => {
@@ -399,7 +458,7 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
           {view === 'faq' && (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {FAQ_ITEMS.map((item, i) => {
+                {faqItems.map((item, i) => {
                   const isOpen = expandedFaq === i;
                   return (
                     <div key={i} style={{ background: '#fff', borderRadius: '14px', border: '1px solid #f0dcbc', overflow: 'hidden' }}>
@@ -421,7 +480,14 @@ export default function ConsultationHub({ onClose }: { onClose: () => void }) {
                   );
                 })}
               </div>
-              <div style={{ textAlign: 'center', fontSize: '0.76rem', color: '#a97a4f' }}>資金・衛生許可・その他のカテゴリは現在準備中です</div>
+              {(() => {
+                const coveredCategories = new Set(faqItems.map(item => item.category));
+                const missingCategories = CATEGORIES.filter(cat => !coveredCategories.has(cat));
+                if (missingCategories.length === 0) return null;
+                return (
+                  <div style={{ textAlign: 'center', fontSize: '0.76rem', color: '#a97a4f' }}>{missingCategories.join('・')}のカテゴリは現在準備中です</div>
+                );
+              })()}
               <div style={{ background: '#fff8ee', border: '1px solid #e8c193', borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.8rem', color: '#8a5f3a', marginBottom: '10px' }}>知りたいことが見つからない場合は</div>
                 <button onClick={() => setView('post')} style={{ border: 'none', borderRadius: '24px', padding: '10px 20px', background: '#dd8a4e', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>+ 相談を投稿する</button>
