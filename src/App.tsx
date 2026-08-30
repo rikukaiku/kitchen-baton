@@ -646,7 +646,10 @@ const App = () => {
             <MapContainer center={mapConfig.center} zoom={mapConfig.zoom} style={isMobile ? { height: '400px', width: '100%' } : { height: '100%', width: '100%' }}>
               <ChangeView center={mapConfig.center} zoom={mapConfig.zoom} />
               <MapResizeFixer />
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
+              />
               {showNeeds && regionStats.filter(region => region.need !== '低').map(region => (
                 <Circle
                   key={region.id}
