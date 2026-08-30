@@ -691,7 +691,7 @@ const App = () => {
 
       </div>
 
-      <footer style={{ padding: '10px 24px', fontSize: '0.72rem', color: '#8a94a6', textAlign: 'center' }}>
+      <footer style={{ padding: '8px 24px', fontSize: '0.62rem', color: '#8a94a6', textAlign: 'center' }}>
         こども食堂データ出典：東京都オープンデータカタログ（区市町村各データセット）／東京都福祉局「子供食堂推進事業」（いずれも
         <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noreferrer" style={{ color: '#8a94a6' }}> CC BY 4.0</a>
         ）。詳細は <code>data/SOURCES.md</code> を参照。
