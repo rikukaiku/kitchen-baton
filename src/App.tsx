@@ -9,7 +9,7 @@ import L from 'leaflet';
 import Papa from 'papaparse';
 import ConsultationHub from './ConsultationHub';
 
-const GOOGLE_FORM_VIEW_URL = 'https://forms.gle/6aoV4cJvBEbPKQMd8';
+const GOOGLE_FORM_VIEW_URL = 'https://forms.gle/9oYr8Vs5HivmMf5J6';
 
 // Leafletアイコンの修正（デフォルトだと表示されないことがあるため）
 const DefaultIcon = L.icon({
