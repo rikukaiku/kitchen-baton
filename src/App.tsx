@@ -65,6 +65,43 @@ const TYPE_ICONS: Record<string, L.DivIcon> = Object.fromEntries(
   Object.keys(TYPE_COLORS).map(t => [t, makePinIcon(TYPE_COLORS[t], TYPE_GLYPHS[t])])
 );
 
+// 場所ごとの問い合わせ導線（電話／メール／担当窓口のフォームや関連ページ）。
+// 実データにはほぼ連絡先情報が無いため、無い場合は登録フォームへの案内を出す。
+// ただし公民館は名称で検索すれば自治体サイト等から連絡先が分かるため、
+// 連絡先が無くても案内は出さない。
+function ContactSection({ loc, compact }: { loc: any, compact?: boolean }) {
+  const hasContact = Boolean(loc.phone || loc.email || loc.url);
+  if (!hasContact && loc.type === '公民館') return null;
+  const fontSize = compact ? '0.72rem' : '0.78rem';
+  return (
+    <div style={{ marginTop: compact ? '6px' : '10px', paddingTop: compact ? '6px' : '10px', borderTop: '1px solid #eee', fontSize }}>
+      <div style={{ fontWeight: 700, color: '#555', marginBottom: '4px' }}>問い合わせ</div>
+      {loc.phone && (
+        <div style={{ marginBottom: '2px' }}>
+          <a href={`tel:${loc.phone}`} style={{ color: '#c15a2c', fontWeight: 700, textDecoration: 'none' }}>📞 電話でお問い合わせ（{loc.phone}）</a>
+        </div>
+      )}
+      {loc.email && (
+        <div style={{ marginBottom: '2px' }}>
+          <a href={`mailto:${loc.email}`} style={{ color: '#c15a2c', fontWeight: 700, textDecoration: 'none' }}>✉️ メールでお問い合わせ</a>
+        </div>
+      )}
+      {loc.url && (
+        <div>
+          <a href={loc.url} target="_blank" rel="noreferrer" style={{ color: '#c15a2c', fontWeight: 700, textDecoration: 'none' }}>🔗 問い合わせフォームへ</a>
+          <div style={{ color: '#888', fontSize: '0.68rem', marginTop: '2px' }}>担当窓口のお問い合わせフォームまたは関連ページに移動します</div>
+        </div>
+      )}
+      {!hasContact && (
+        <div style={{ color: '#888' }}>
+          連絡先情報はまだ登録されていません。
+          <a href={GOOGLE_FORM_VIEW_URL} target="_blank" rel="noreferrer" style={{ color: '#c15a2c', fontWeight: 700 }}>情報をお持ちの方はこちらからご登録ください</a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 地図の視点を切り替える補助コンポーネント
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
@@ -244,22 +281,24 @@ const dummyLocations = [
 // まだ実データを持っていないため、地図・フィルタの見た目を確認できるよう
 // 名称に「（デモ）」を付けたサンプルデータを常時表示する。
 // 実データに置き換わり次第、このブロックごと削除すること。
+// phone/email/urlは問い合わせ導線の表示パターン（電話のみ／メールのみ／フォームのみ／
+// 全部あり／連絡先なし）を一通り確認できるよう、あえて組み合わせを変えている
 const sampleOtherTypeLocations = [
-  { id: 'demo-pantry-1', name: "（デモ）フードパントリーおおた", lat: 35.5614, lng: 139.7160, address: "東京都大田区（サンプル住所）", prefecture: "東京都", municipality: "大田区", type: "フードパントリー", needs: ["食材配布"] },
-  { id: 'demo-pantry-2', name: "（デモ）フードパントリーえどがわ", lat: 35.7066, lng: 139.8686, address: "東京都江戸川区（サンプル住所）", prefecture: "東京都", municipality: "江戸川区", type: "フードパントリー", needs: ["食材配布"] },
-  { id: 'demo-pantry-3', name: "（デモ）フードパントリーきた", lat: 35.7526, lng: 139.7336, address: "東京都北区（サンプル住所）", prefecture: "東京都", municipality: "北区", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"] },
+  { id: 'demo-pantry-1', name: "（デモ）フードパントリーおおた", lat: 35.5614, lng: 139.7160, address: "東京都大田区（サンプル住所）", prefecture: "東京都", municipality: "大田区", type: "フードパントリー", needs: ["食材配布"], phone: "03-1234-5601" },
+  { id: 'demo-pantry-2', name: "（デモ）フードパントリーえどがわ", lat: 35.7066, lng: 139.8686, address: "東京都江戸川区（サンプル住所）", prefecture: "東京都", municipality: "江戸川区", type: "フードパントリー", needs: ["食材配布"], email: "pantry-edogawa@example.jp" },
+  { id: 'demo-pantry-3', name: "（デモ）フードパントリーきた", lat: 35.7526, lng: 139.7336, address: "東京都北区（サンプル住所）", prefecture: "東京都", municipality: "北区", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"], url: GOOGLE_FORM_VIEW_URL },
   { id: 'demo-pantry-4', name: "（デモ）フードパントリー八王子", lat: 35.6559, lng: 139.3392, address: "東京都八王子市（サンプル住所）", prefecture: "東京都", municipality: "八王子市", type: "フードパントリー", needs: ["食材配布"] },
-  { id: 'demo-pantry-5', name: "（デモ）フードパントリー町田", lat: 35.5461, lng: 139.4380, address: "東京都町田市（サンプル住所）", prefecture: "東京都", municipality: "町田市", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"] },
-  { id: 'demo-akiya-1', name: "（デモ）空き家活用拠点せたがや", lat: 35.6464, lng: 139.6530, address: "東京都世田谷区（サンプル住所）", prefecture: "東京都", municipality: "世田谷区", type: "空き家活用", needs: ["キッチン", "学習スペース"] },
-  { id: 'demo-akiya-2', name: "（デモ）空き家活用拠点すぎなみ", lat: 35.6994, lng: 139.6363, address: "東京都杉並区（サンプル住所）", prefecture: "東京都", municipality: "杉並区", type: "空き家活用", needs: ["キッチン"] },
-  { id: 'demo-akiya-3', name: "（デモ）空き家活用拠点ねりま", lat: 35.7357, lng: 139.6516, address: "東京都練馬区（サンプル住所）", prefecture: "東京都", municipality: "練馬区", type: "空き家活用", needs: ["学習スペース"] },
+  { id: 'demo-pantry-5', name: "（デモ）フードパントリー町田", lat: 35.5461, lng: 139.4380, address: "東京都町田市（サンプル住所）", prefecture: "東京都", municipality: "町田市", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"], phone: "042-123-4502", url: GOOGLE_FORM_VIEW_URL },
+  { id: 'demo-akiya-1', name: "（デモ）空き家活用拠点せたがや", lat: 35.6464, lng: 139.6530, address: "東京都世田谷区（サンプル住所）", prefecture: "東京都", municipality: "世田谷区", type: "空き家活用", needs: ["キッチン", "学習スペース"], phone: "03-1234-5602" },
+  { id: 'demo-akiya-2', name: "（デモ）空き家活用拠点すぎなみ", lat: 35.6994, lng: 139.6363, address: "東京都杉並区（サンプル住所）", prefecture: "東京都", municipality: "杉並区", type: "空き家活用", needs: ["キッチン"], email: "akiya-suginami@example.jp" },
+  { id: 'demo-akiya-3', name: "（デモ）空き家活用拠点ねりま", lat: 35.7357, lng: 139.6516, address: "東京都練馬区（サンプル住所）", prefecture: "東京都", municipality: "練馬区", type: "空き家活用", needs: ["学習スペース"], url: GOOGLE_FORM_VIEW_URL },
   { id: 'demo-akiya-4', name: "（デモ）空き家活用拠点立川", lat: 35.7138, lng: 139.4137, address: "東京都立川市（サンプル住所）", prefecture: "東京都", municipality: "立川市", type: "空き家活用", needs: ["キッチン", "学習スペース"] },
-  { id: 'demo-akiya-5', name: "（デモ）空き家活用拠点多摩", lat: 35.6368, lng: 139.4467, address: "東京都多摩市（サンプル住所）", prefecture: "東京都", municipality: "多摩市", type: "空き家活用", needs: ["学習スペース"] },
-  { id: 'demo-shain-1', name: "（デモ）社員食堂ひらきば 千代田", lat: 35.6938, lng: 139.7530, address: "東京都千代田区（サンプル住所）", prefecture: "東京都", municipality: "千代田区", type: "社員食堂", needs: ["食事提供"] },
-  { id: 'demo-shain-2', name: "（デモ）社員食堂ひらきば 港", lat: 35.6581, lng: 139.7514, address: "東京都港区（サンプル住所）", prefecture: "東京都", municipality: "港区", type: "社員食堂", needs: ["食事提供", "キッチン"] },
-  { id: 'demo-shain-3', name: "（デモ）社員食堂ひらきば 品川", lat: 35.6092, lng: 139.7300, address: "東京都品川区（サンプル住所）", prefecture: "東京都", municipality: "品川区", type: "社員食堂", needs: ["食事提供"] },
+  { id: 'demo-akiya-5', name: "（デモ）空き家活用拠点多摩", lat: 35.6368, lng: 139.4467, address: "東京都多摩市（サンプル住所）", prefecture: "東京都", municipality: "多摩市", type: "空き家活用", needs: ["学習スペース"], phone: "042-123-4505", email: "akiya-tama@example.jp", url: GOOGLE_FORM_VIEW_URL },
+  { id: 'demo-shain-1', name: "（デモ）社員食堂ひらきば 千代田", lat: 35.6938, lng: 139.7530, address: "東京都千代田区（サンプル住所）", prefecture: "東京都", municipality: "千代田区", type: "社員食堂", needs: ["食事提供"], phone: "03-1234-5603" },
+  { id: 'demo-shain-2', name: "（デモ）社員食堂ひらきば 港", lat: 35.6581, lng: 139.7514, address: "東京都港区（サンプル住所）", prefecture: "東京都", municipality: "港区", type: "社員食堂", needs: ["食事提供", "キッチン"], email: "shain-minato@example.jp" },
+  { id: 'demo-shain-3', name: "（デモ）社員食堂ひらきば 品川", lat: 35.6092, lng: 139.7300, address: "東京都品川区（サンプル住所）", prefecture: "東京都", municipality: "品川区", type: "社員食堂", needs: ["食事提供"], url: GOOGLE_FORM_VIEW_URL },
   { id: 'demo-shain-4', name: "（デモ）社員食堂ひらきば 渋谷", lat: 35.6640, lng: 139.6982, address: "東京都渋谷区（サンプル住所）", prefecture: "東京都", municipality: "渋谷区", type: "社員食堂", needs: ["食事提供"] },
-  { id: 'demo-shain-5', name: "（デモ）社員食堂ひらきば 新宿", lat: 35.6938, lng: 139.7036, address: "東京都新宿区（サンプル住所）", prefecture: "東京都", municipality: "新宿区", type: "社員食堂", needs: ["食事提供", "キッチン"] },
+  { id: 'demo-shain-5', name: "（デモ）社員食堂ひらきば 新宿", lat: 35.6938, lng: 139.7036, address: "東京都新宿区（サンプル住所）", prefecture: "東京都", municipality: "新宿区", type: "社員食堂", needs: ["食事提供", "キッチン"], phone: "03-1234-5605", url: GOOGLE_FORM_VIEW_URL },
 ];
 
 // 初期表示は東京都庁（新宿区）付近。23区のほぼ中心にあたる
@@ -406,7 +445,8 @@ const App = () => {
             prefecture: "東京都",
             municipality: f.properties?.municipality || "",
             type: 'こども食堂',
-            needs: f.properties?.needs || []
+            needs: f.properties?.needs || [],
+            url: f.properties?.url || ''
           }))
           .filter((item: any) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
       })
@@ -647,6 +687,7 @@ const App = () => {
                       </div>
                       <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '4px' }}>{loc.address}</div>
                       <div style={{ fontSize: '0.82rem', color: '#555' }}>活動内容: {loc.needs.join(', ')}</div>
+                      <ContactSection loc={loc} compact />
                     </div>
                   ))}
                 </div>
@@ -681,7 +722,7 @@ const App = () => {
                     icon={TYPE_ICONS[loc.type] || DefaultIcon}
                     ref={(el) => { markerRefs.current[loc.id] = el; }}
                   >
-                    <Popup>
+                    <Popup maxWidth={isMobile ? 150 : 300}>
                       <strong>{loc.name}</strong><br />
                       <span style={{ fontSize: '0.8rem' }}>{loc.address}</span><br />
                       {loc.type && (
@@ -690,6 +731,7 @@ const App = () => {
                       {loc.needs.map((n: string) => (
                         <span key={n} style={{ fontSize: '0.7rem', background: '#edf2fb', padding: '2px 5px', marginRight: '4px', borderRadius: '4px' }}>{n}</span>
                       ))}
+                      <ContactSection loc={loc} compact />
                     </Popup>
                   </Marker>
                 ))}
