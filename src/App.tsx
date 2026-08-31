@@ -468,12 +468,12 @@ const App = () => {
   return (
     <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Zen Maru Gothic', sans-serif", overflow: isMobile ? 'auto' : 'hidden', background: '#fdf6ec' }}>
       {/* ヘッダー */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <header style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', padding: isMobile ? '14px 16px' : '14px 24px', gap: isMobile ? '12px' : 0, background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
+          <h1 style={{ margin: 0, fontSize: isMobile ? '1.25rem' : '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
           <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>こども食堂・活動拠点の可視化マップ</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
           <button onClick={() => setShowNeeds(!showNeeds)} style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: showNeeds ? '#fff8ee' : '#e8a56c', color: showNeeds ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>{showNeeds ? 'ニーズ表示中' : 'ニーズ非表示'}</button>
           <a href={GOOGLE_FORM_VIEW_URL} target="_blank" rel="noreferrer" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}>+ 場所を登録</a>
@@ -493,14 +493,14 @@ const App = () => {
               <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>市町村フィルタ</label>
-                  <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                  <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff', color: '#333' }}>
                     <option value="すべて">すべて</option>
                     {regionCityOptions.map(city => <option key={city} value={city}>{city}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>不足レベルフィルタ</label>
-                  <select value={filterNeed} onChange={(e) => setFilterNeed(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                  <select value={filterNeed} onChange={(e) => setFilterNeed(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff', color: '#333' }}>
                     <option value="すべて">すべて</option>
                     <option value="高">高</option>
                     <option value="中">中</option>
@@ -573,14 +573,14 @@ const App = () => {
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>都道府県</label>
-                  <select value={filterPrefecture} onChange={(e) => { setFilterPrefecture(e.target.value); setFilterMunicipality('すべて'); }} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                  <select value={filterPrefecture} onChange={(e) => { setFilterPrefecture(e.target.value); setFilterMunicipality('すべて'); }} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff', color: '#333' }}>
                     <option value="すべて">すべて</option>
                     {prefectureOptions.map(pref => <option key={pref} value={pref}>{pref}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>市区町村</label>
-                  <select value={filterMunicipality} onChange={(e) => setFilterMunicipality(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                  <select value={filterMunicipality} onChange={(e) => setFilterMunicipality(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff', color: '#333' }}>
                     <option value="すべて">すべて</option>
                     {municipalityOptions.map(muni => <option key={muni} value={muni}>{muni}</option>)}
                   </select>
@@ -607,7 +607,7 @@ const App = () => {
                 </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>設備</label>
-                  <select value={equipment} onChange={(e) => setEquipment(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }}>
+                  <select value={equipment} onChange={(e) => setEquipment(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff', color: '#333' }}>
                     <option>すべて</option>
                     <option>キッチン</option>
                     <option>冷蔵庫</option>
