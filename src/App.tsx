@@ -288,10 +288,6 @@ const App = () => {
     marker?.openPopup();
   }, [selectedLocationId]);
 
-  // モバイルでは地図が画面上部にあるため、一覧タップ時に地図までスクロールして見えるようにする
-  const scrollToMapOnMobile = () => {
-    if (isMobile) window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   // 地図の表示位置・検索条件をすべて初期状態に戻す
   const resetAll = () => {
@@ -445,40 +441,28 @@ const App = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   const mainLayoutStyle: React.CSSProperties = isMobile
-    ? { flex: 1, display: 'flex', flexDirection: 'column', gap: 0, padding: 0, height: 'auto', overflow: 'visible' }
-    : { flex: 1, display: 'flex', gap: '16px', padding: '16px', height: 'calc(100vh - 80px)', overflow: 'hidden' };
+    ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'row', gap: '10px', padding: '10px 12px', overflow: 'hidden' }
+    : { flex: 1, minHeight: 0, display: 'flex', gap: '16px', padding: '16px', overflow: 'hidden' };
 
-  // モバイル時のmainの高さを明示的に指定。地図を一覧より先に表示する
-  // （検索結果と地図が離れて見づらいため）。stickyでの追従は、既存のoverflow:auto構成と
-  // 競合して機能しないため見送り、まずは表示順の変更のみ対応する
-  const mainStyle: React.CSSProperties = isMobile
-    ? { display: 'flex', flexDirection: 'column', gap: '16px', height: '360px', order: -1 }
-    : { flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' };
+  // 地図（main）は検索/一覧（section）と常に左右に並べ、高さいっぱいに表示する
+  const mainStyle: React.CSSProperties = { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '16px' };
   const sidebarStyle: React.CSSProperties = isMobile
-    ? { width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', height: 'auto', overflow: 'visible', marginBottom: '12px' }
-    : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflow: 'hidden' };
-  const cardListStyle: React.CSSProperties = isMobile
-    ? { maxHeight: '320px', overflow: 'auto' }
-    : { maxHeight: '50vh', overflow: 'auto' };
-  const searchListStyle: React.CSSProperties = isMobile
-    ? { maxHeight: '220px', overflow: 'auto' }
-    : { maxHeight: '50vh', overflow: 'auto' };
+    ? { width: '44%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: '100%', minHeight: 0, overflow: 'hidden' }
+    : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', minHeight: 0, overflow: 'hidden' };
+  const cardListStyle: React.CSSProperties = { maxHeight: '50vh', overflow: 'auto' };
+  const searchListStyle: React.CSSProperties = { maxHeight: '50vh', overflow: 'auto' };
   // サイドバー全体（フィルタ＋一覧）が縦に収まりきらない場合は、この要素自体がスクロールする
   // （一覧のmaxHeightだけでは、フィルタ項目が多い/画面が低いときに一覧が0pxまで潰れてしまうため）
-  const sidebarCardStyle: React.CSSProperties = isMobile
-    ? { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flexShrink: 0 }
-    : { background: '#fff', borderRadius: '18px', padding: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flex: 1, minHeight: 0, overflow: 'auto' };
-  const tabContentStyle: React.CSSProperties = isMobile
-    ? { display: 'flex', flexDirection: 'column', height: '100%' }
-    : { display: 'flex', flexDirection: 'column' };
+  const sidebarCardStyle: React.CSSProperties = { background: '#fff', borderRadius: isMobile ? '14px' : '18px', padding: isMobile ? '12px' : '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flex: 1, minHeight: 0, overflow: 'auto', fontSize: isMobile ? '0.9rem' : '1rem' };
+  const tabContentStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', height: '100%' };
 
   return (
-    <div style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Zen Maru Gothic', sans-serif", overflow: isMobile ? 'auto' : 'hidden', background: '#fdf6ec' }}>
+    <div style={{ height: '100vh', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Zen Maru Gothic', sans-serif", overflow: 'hidden', background: '#fdf6ec' }}>
       {/* ヘッダー */}
-      <header style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', padding: isMobile ? '14px 16px' : '14px 24px', gap: isMobile ? '12px' : 0, background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <header style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', padding: isMobile ? '10px 16px' : '14px 24px', gap: isMobile ? '10px' : 0, background: '#dd8a4e', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', flexShrink: 0 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: isMobile ? '1.25rem' : '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
-          <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '4px' }}>こども食堂・活動拠点の可視化マップ</div>
+          <h1 style={{ margin: 0, fontSize: isMobile ? '1.15rem' : '1.5rem', letterSpacing: '0.05em', fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.1)', color: '#fff' }}>🍳 キッチン・バトン</h1>
+          <div style={{ fontSize: isMobile ? '0.78rem' : '0.9rem', opacity: 0.9, marginTop: '4px' }}>こども食堂・活動拠点の可視化マップ</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={resetAll} title="表示位置・検索条件を初期状態に戻す" style={{ border: 'none', borderRadius: '24px', padding: '10px 18px', background: '#fff8ee', color: '#c15a2c', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>↺ リセット</button>
@@ -488,14 +472,28 @@ const App = () => {
         </div>
       </header>
 
+      {/* タブ切り替え・現在地から探すは、ヘッダーの直下に常時表示する */}
+      <div style={{ flexShrink: 0, padding: isMobile ? '10px 12px 0' : '16px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'alert' ? '#fff' : '#8a5f3a', cursor: 'pointer', fontSize: isMobile ? '0.82rem' : '1rem' }}>ニーズアラート</button>
+          <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'search' ? '#fff' : '#8a5f3a', cursor: 'pointer', fontSize: isMobile ? '0.82rem' : '1rem' }}>場所を探す</button>
+        </div>
+        <div>
+          <button
+            onClick={userLocation ? () => { setUserLocation(null); setLocationStatus('idle'); } : findNearby}
+            style={{ width: '100%', border: userLocation ? '1px solid #dd8a4e' : 'none', borderRadius: '12px', padding: '10px 0', background: userLocation ? '#fbe6d3' : '#dd8a4e', color: userLocation ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: isMobile ? '0.8rem' : '0.85rem' }}
+          >
+            {locationStatus === 'loading' ? '現在地を取得中…' : userLocation ? '📍 現在地からの距離順で表示中（解除）' : '📍 現在地から探す'}
+          </button>
+          {locationStatus === 'error' && (
+            <div style={{ fontSize: '0.72rem', color: '#e74c3c', marginTop: '6px' }}>現在地を取得できませんでした。ブラウザの位置情報の許可設定をご確認ください。</div>
+          )}
+        </div>
+      </div>
+
       <div style={mainLayoutStyle}>
         <section style={sidebarStyle}>
           <div style={sidebarCardStyle}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-              <button onClick={() => setActiveTab('alert')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'alert' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'alert' ? '#fff' : '#8a5f3a', cursor: 'pointer' }}>ニーズアラート</button>
-              <button onClick={() => setActiveTab('search')} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: '12px', background: activeTab === 'search' ? '#dd8a4e' : '#f5e4d0', color: activeTab === 'search' ? '#fff' : '#8a5f3a', cursor: 'pointer' }}>場所を探す</button>
-            </div>
-
             {activeTab === 'alert' ? (
               <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
@@ -526,7 +524,7 @@ const App = () => {
                     <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
                       <div style={{ color: '#e74c3c', fontWeight: 900, fontSize: '1.05rem', marginBottom: '6px' }}>⚠️ 特に活動が望まれている地域</div>
                       {highNeedSpecialRegions.map(region => (
-                        <div key={region.id} onClick={() => { setMapConfig({ center: [region.lat, region.lng], zoom: 14 }); scrollToMapOnMobile(); }} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #f0dcbc', cursor: 'pointer', fontWeight: 700 }}>
+                        <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '10px', padding: '8px 10px', marginBottom: '6px', background: '#fdeaea', border: '1px solid #f0dcbc', cursor: 'pointer', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', background: '#fdeaea', borderRadius: '8px', padding: '2px 10px', fontWeight: 900 }}>不足度 高</span>
                           <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#e74c3c', fontWeight: 700 }}>[こども食堂が近隣にありません]</span>
@@ -546,7 +544,7 @@ const App = () => {
                     const needColor = region.need === '高' ? '#e74c3c' : region.need === '中' ? '#f39c12' : '#1976d2';
                     const needBg = region.need === '高' ? '#fdeaea' : region.need === '中' ? '#fff6e3' : '#e3eaf7';
                     return (
-                      <div key={region.id} onClick={() => { setMapConfig({ center: [region.lat, region.lng], zoom: 14 }); scrollToMapOnMobile(); }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#fffaf2', border: '1px solid #f0dcbc', cursor: 'pointer' }}>
+                      <div key={region.id} onClick={() => setMapConfig({ center: [region.lat, region.lng], zoom: 14 })} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#fffaf2', border: '1px solid #f0dcbc', cursor: 'pointer' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
                           {region.name}
                           <span style={{ fontSize: '0.8rem', color: needColor, background: needBg, borderRadius: '8px', padding: '2px 10px', fontWeight: 900, letterSpacing: '0.05em', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -563,17 +561,6 @@ const App = () => {
               </div>
             ) : (
               <div style={tabContentStyle}>
-                <div style={{ marginBottom: '12px', flexShrink: 0 }}>
-                  <button
-                    onClick={userLocation ? () => { setUserLocation(null); setLocationStatus('idle'); } : findNearby}
-                    style={{ width: '100%', border: userLocation ? '1px solid #dd8a4e' : 'none', borderRadius: '12px', padding: '10px 0', background: userLocation ? '#fbe6d3' : '#dd8a4e', color: userLocation ? '#c15a2c' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
-                  >
-                    {locationStatus === 'loading' ? '現在地を取得中…' : userLocation ? '📍 現在地からの距離順で表示中（解除）' : '📍 現在地から探す'}
-                  </button>
-                  {locationStatus === 'error' && (
-                    <div style={{ fontSize: '0.72rem', color: '#e74c3c', marginTop: '6px' }}>現在地を取得できませんでした。ブラウザの位置情報の許可設定をご確認ください。</div>
-                  )}
-                </div>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '6px' }}>キーワード検索</label>
                   <input type="text" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} placeholder="活動内容、施設名、住所で検索" style={{ width: '95%', padding: '10px 12px', borderRadius: '12px', border: '1px solid #ccd6e8', background: '#fff' }} />
@@ -628,7 +615,6 @@ const App = () => {
                       if (Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
                         setMapConfig({ center: [loc.lat, loc.lng], zoom: 15 });
                         setSelectedLocationId(loc.id);
-                        scrollToMapOnMobile();
                       }
                     }} style={{ borderRadius: '14px', padding: '12px 14px', marginBottom: '10px', background: '#fffaf2', border: '1px solid #f0dcbc', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 700 }}>
@@ -649,8 +635,8 @@ const App = () => {
         </section>
 
         <main style={mainStyle}>
-          <div style={isMobile ? { height: '360px', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' } : { flex: 1, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}>
-            <MapContainer center={mapConfig.center} zoom={mapConfig.zoom} style={isMobile ? { height: '360px', width: '100%' } : { height: '100%', width: '100%' }}>
+          <div style={{ flex: 1, minHeight: 0, borderRadius: isMobile ? '14px' : '20px', overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.08)' }}>
+            <MapContainer center={mapConfig.center} zoom={mapConfig.zoom} style={{ height: '100%', width: '100%' }}>
               <ChangeView center={mapConfig.center} zoom={mapConfig.zoom} />
               <MapResizeFixer />
               <TileLayer
