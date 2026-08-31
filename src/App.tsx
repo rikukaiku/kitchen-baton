@@ -240,6 +240,28 @@ const dummyLocations = [
   { id: 3, name: "地域子ども食堂 あかり", lat: 35.742, lng: 139.605, address: "石神井公園内", needs: ["学習支援", "遊び場提供"] },
 ];
 
+// こども食堂・公民館以外（フードパントリー／空き家活用／社員食堂）は
+// まだ実データを持っていないため、地図・フィルタの見た目を確認できるよう
+// 名称に「（デモ）」を付けたサンプルデータを常時表示する。
+// 実データに置き換わり次第、このブロックごと削除すること。
+const sampleOtherTypeLocations = [
+  { id: 'demo-pantry-1', name: "（デモ）フードパントリーおおた", lat: 35.5614, lng: 139.7160, address: "東京都大田区（サンプル住所）", prefecture: "東京都", municipality: "大田区", type: "フードパントリー", needs: ["食材配布"] },
+  { id: 'demo-pantry-2', name: "（デモ）フードパントリーえどがわ", lat: 35.7066, lng: 139.8686, address: "東京都江戸川区（サンプル住所）", prefecture: "東京都", municipality: "江戸川区", type: "フードパントリー", needs: ["食材配布"] },
+  { id: 'demo-pantry-3', name: "（デモ）フードパントリーきた", lat: 35.7526, lng: 139.7336, address: "東京都北区（サンプル住所）", prefecture: "東京都", municipality: "北区", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"] },
+  { id: 'demo-pantry-4', name: "（デモ）フードパントリー八王子", lat: 35.6559, lng: 139.3392, address: "東京都八王子市（サンプル住所）", prefecture: "東京都", municipality: "八王子市", type: "フードパントリー", needs: ["食材配布"] },
+  { id: 'demo-pantry-5', name: "（デモ）フードパントリー町田", lat: 35.5461, lng: 139.4380, address: "東京都町田市（サンプル住所）", prefecture: "東京都", municipality: "町田市", type: "フードパントリー", needs: ["食材配布", "冷蔵庫"] },
+  { id: 'demo-akiya-1', name: "（デモ）空き家活用拠点せたがや", lat: 35.6464, lng: 139.6530, address: "東京都世田谷区（サンプル住所）", prefecture: "東京都", municipality: "世田谷区", type: "空き家活用", needs: ["キッチン", "学習スペース"] },
+  { id: 'demo-akiya-2', name: "（デモ）空き家活用拠点すぎなみ", lat: 35.6994, lng: 139.6363, address: "東京都杉並区（サンプル住所）", prefecture: "東京都", municipality: "杉並区", type: "空き家活用", needs: ["キッチン"] },
+  { id: 'demo-akiya-3', name: "（デモ）空き家活用拠点ねりま", lat: 35.7357, lng: 139.6516, address: "東京都練馬区（サンプル住所）", prefecture: "東京都", municipality: "練馬区", type: "空き家活用", needs: ["学習スペース"] },
+  { id: 'demo-akiya-4', name: "（デモ）空き家活用拠点立川", lat: 35.7138, lng: 139.4137, address: "東京都立川市（サンプル住所）", prefecture: "東京都", municipality: "立川市", type: "空き家活用", needs: ["キッチン", "学習スペース"] },
+  { id: 'demo-akiya-5', name: "（デモ）空き家活用拠点多摩", lat: 35.6368, lng: 139.4467, address: "東京都多摩市（サンプル住所）", prefecture: "東京都", municipality: "多摩市", type: "空き家活用", needs: ["学習スペース"] },
+  { id: 'demo-shain-1', name: "（デモ）社員食堂ひらきば 千代田", lat: 35.6938, lng: 139.7530, address: "東京都千代田区（サンプル住所）", prefecture: "東京都", municipality: "千代田区", type: "社員食堂", needs: ["食事提供"] },
+  { id: 'demo-shain-2', name: "（デモ）社員食堂ひらきば 港", lat: 35.6581, lng: 139.7514, address: "東京都港区（サンプル住所）", prefecture: "東京都", municipality: "港区", type: "社員食堂", needs: ["食事提供", "キッチン"] },
+  { id: 'demo-shain-3', name: "（デモ）社員食堂ひらきば 品川", lat: 35.6092, lng: 139.7300, address: "東京都品川区（サンプル住所）", prefecture: "東京都", municipality: "品川区", type: "社員食堂", needs: ["食事提供"] },
+  { id: 'demo-shain-4', name: "（デモ）社員食堂ひらきば 渋谷", lat: 35.6640, lng: 139.6982, address: "東京都渋谷区（サンプル住所）", prefecture: "東京都", municipality: "渋谷区", type: "社員食堂", needs: ["食事提供"] },
+  { id: 'demo-shain-5', name: "（デモ）社員食堂ひらきば 新宿", lat: 35.6938, lng: 139.7036, address: "東京都新宿区（サンプル住所）", prefecture: "東京都", municipality: "新宿区", type: "社員食堂", needs: ["食事提供", "キッチン"] },
+];
+
 // 初期表示は東京都庁（新宿区）付近。23区のほぼ中心にあたる
 const DEFAULT_MAP_CONFIG: { center: [number, number], zoom: number } = { center: [35.6895, 139.6917], zoom: 11 };
 
@@ -365,7 +387,7 @@ const App = () => {
     const commit = () => {
       if (!saitamaDone || !tokyoDone || !kouminDone) return;
       const merged = [...tokyoData, ...saitamaData, ...kouminData];
-      setLocations(merged.length > 0 ? merged : dummyLocations);
+      setLocations([...(merged.length > 0 ? merged : dummyLocations), ...sampleOtherTypeLocations]);
     };
 
     // 埼玉県データはライセンス・出典未確認のため、確認が取れるまで一時的に地図表示から除外する
