@@ -449,8 +449,8 @@ const App = () => {
   const sidebarStyle: React.CSSProperties = isMobile
     ? { width: '44%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: '100%', minHeight: 0, overflow: 'hidden' }
     : { width: '320px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', minHeight: 0, overflow: 'hidden' };
-  const cardListStyle: React.CSSProperties = { maxHeight: '50vh', overflow: 'auto' };
-  const searchListStyle: React.CSSProperties = { maxHeight: '50vh', overflow: 'auto' };
+  const cardListStyle: React.CSSProperties = { flex: 1, minHeight: '140px', overflow: 'auto' };
+  const searchListStyle: React.CSSProperties = { flex: 1, minHeight: '140px', overflow: 'auto' };
   // サイドバー全体（フィルタ＋一覧）が縦に収まりきらない場合は、この要素自体がスクロールする
   // （一覧のmaxHeightだけでは、フィルタ項目が多い/画面が低いときに一覧が0pxまで潰れてしまうため）
   const sidebarCardStyle: React.CSSProperties = { background: '#fff', borderRadius: isMobile ? '14px' : '18px', padding: isMobile ? '12px' : '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.05)', flex: 1, minHeight: 0, overflow: 'auto', fontSize: isMobile ? '0.9rem' : '1rem' };
@@ -493,7 +493,7 @@ const App = () => {
 
       <div style={mainLayoutStyle}>
         <section style={sidebarStyle}>
-          <div style={sidebarCardStyle}>
+          <div style={sidebarCardStyle} className="kb-scroll">
             {activeTab === 'alert' ? (
               <div style={tabContentStyle}>
                 <div style={{ marginBottom: '12px', flexShrink: 0 }}>
@@ -518,7 +518,7 @@ const App = () => {
                   もご覧ください。
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>食堂が求められている地域を一覧表示</div>
-                <div style={cardListStyle}>
+                <div style={cardListStyle} className="kb-scroll">
                   {/* 特別警告エリア */}
                   {highNeedSpecialRegions.length > 0 && (
                     <div style={{ marginBottom: '18px', padding: '10px', background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '12px' }}>
@@ -609,7 +609,7 @@ const App = () => {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px', color: '#333', fontWeight: 700, flexShrink: 0 }}>検索結果 ({filteredLocations.length}件)</div>
-                <div style={searchListStyle}>
+                <div style={searchListStyle} className="kb-scroll">
                   {filteredLocations.map(loc => (
                     <div key={loc.id} onClick={() => {
                       if (Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
