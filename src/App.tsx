@@ -9,8 +9,7 @@ import L from 'leaflet';
 import Papa from 'papaparse';
 import ConsultationHub from './ConsultationHub';
 
-// edoさんがGoogleフォームを用意でき次第、実際のURL（.../viewform）に差し替える
-const GOOGLE_FORM_VIEW_URL = 'https://docs.google.com/forms/d/e/DUMMY_FORM_ID/viewform';
+const GOOGLE_FORM_VIEW_URL = 'https://forms.gle/6aoV4cJvBEbPKQMd8';
 
 // Leafletアイコンの修正（デフォルトだと表示されないことがあるため）
 const DefaultIcon = L.icon({
